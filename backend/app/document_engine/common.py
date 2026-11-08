@@ -39,6 +39,44 @@ def parse_theme_xml(blob: bytes) -> dict:
     return {"fonts": fonts, "colors": colors}
 
 
+def replace_in_nodes(nodes: list, find: str, repl: str) -> tuple[int, set]:
+    """Find/replace over consecutive text nodes (any element with `.text`), even when `find` spans nodes.
+
+    The replacement lands in the node where the match starts, so it inherits that run's formatting.
+    Returns (replacements, set of nodes whose text changed).
+    """
+    count, start, touched = 0, 0, set()
+    texts = [n.text or "" for n in nodes]
+    while True:
+        full = "".join(texts)
+        i = full.find(find, start)
+        if i == -1:
+            return count, touched
+        j = i + len(find)
+        pos, first, last = 0, None, None
+        for k, s in enumerate(texts):
+            a, b = pos, pos + len(s)
+            if first is None and i < b:
+                first = (k, i - a)
+            if j <= b:
+                last = (k, j - a)
+                break
+            pos = b
+        (k1, o1), (k2, o2) = first, last
+        if k1 == k2:
+            texts[k1] = texts[k1][:o1] + repl + texts[k1][o2:]
+        else:
+            texts[k1] = texts[k1][:o1] + repl
+            for k in range(k1 + 1, k2):
+                texts[k] = ""
+            texts[k2] = texts[k2][o2:]
+        for k in range(k1, k2 + 1):
+            nodes[k].text = texts[k]
+            touched.add(nodes[k])
+        count += 1
+        start = i + len(repl)
+
+
 def clean(d: dict) -> dict:
     """Drop None values so profiles stay compact for LLM prompts."""
     return {k: v for k, v in d.items() if v is not None}

@@ -152,7 +152,8 @@ def analyze_xlsx(path: str | Path, _source_format: str = "xlsx") -> dict:
         "warnings": [],
     }
     if parts["charts"]:
-        prof["warnings"].append(f"{parts['charts']} chart(s) present: openpyxl drops charts on save; edits must patch XML.")
+        prof["warnings"].append(f"{parts['charts']} chart(s) present: kept on edit, but chart style preset, effects and "
+                                "square corners may change (verified against Excel).")
     if parts["has_vba"]:
         prof["warnings"].append("VBA macros present and not supported; .xlsm files are rejected at upload.")
     return prof
