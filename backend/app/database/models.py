@@ -69,6 +69,10 @@ class UploadedFile(Base):
     mime_type: Mapped[str] = mapped_column(String(120))
     size_bytes: Mapped[int] = mapped_column(Integer)
     sha256: Mapped[str] = mapped_column(String(64))
+    # retrieval index state: pending -> indexing -> ready | failed  (older rows: skipped)
+    index_status: Mapped[str] = mapped_column(String(12), default="pending", server_default="skipped")
+    index_error: Mapped[str] = mapped_column(Text, default="", server_default="")
+    chunk_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     session: Mapped[ChatSession] = relationship(back_populates="files")
@@ -132,6 +136,7 @@ class Citation(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     message_id: Mapped[str] = mapped_column(ForeignKey("messages.id", ondelete="CASCADE"), index=True)
+    ref: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # the [n] marker used in the answer text
     source_type: Mapped[str] = mapped_column(String(10))  # web | document
     title: Mapped[str] = mapped_column(String(500), default="")
     url: Mapped[str | None] = mapped_column(String(2000), nullable=True)

@@ -56,6 +56,19 @@
 .badge.docx { background: var(--docx); } .badge.pptx { background: var(--pptx); } .badge.xlsx { background: var(--xlsx); } .badge.pdf { background: var(--pdf); }
 .muted { color: var(--muted); font-size: 0.85rem; }
 
+/* ---------- citations */
+.cite { display: inline-flex; align-items: center; justify-content: center; min-width: 1.35em; height: 1.35em; padding: 0 0.3em; margin: 0 0.1em; border-radius: 0.7em; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); font-size: 0.75em; font-weight: 700; line-height: 1; cursor: pointer; vertical-align: super; }
+.cite:hover { background: var(--accent); color: var(--accent-ink); }
+.cite.static { vertical-align: baseline; cursor: default; font-size: 0.72em; }
+.sources { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; font-size: 0.88rem; }
+.sources-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+.sources ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.src-btn { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: 0; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+.src-btn:hover, .sources li.active .src-btn { background: var(--surface-2); }
+.sources blockquote { margin: 2px 0 6px 30px; padding: 6px 10px; border-left: 3px solid var(--accent); background: var(--bg); color: var(--muted); border-radius: 0 6px 6px 0; overflow-wrap: anywhere; }
+.index-status { font-size: 0.78rem; margin-top: 4px; }
+.index-status.ok { color: var(--accent); } .index-status.busy { color: var(--muted); font-style: italic; } .index-status.bad { color: var(--warn); }
+
 /* ---------- composer */
 .composer { display: flex; align-items: flex-end; gap: 8px; padding: 12px clamp(16px, 5vw, 56px) 18px; border-top: 1px solid var(--border); background: var(--bg); }
 .composer textarea { flex: 1; resize: none; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font: inherit; background: var(--surface); color: var(--text); min-height: 44px; max-height: 160px; field-sizing: content; }

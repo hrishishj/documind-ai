@@ -8,6 +8,8 @@ const enc = new TextEncoder()
 const ev = (event: string, data: unknown) => enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
+vi.mock('./utils', async (orig) => ({ ...(await orig<typeof import('./utils')>()), POLL_MS: 25 }))  // fast polling for tests
+
 type Srv = {
   sessions: any[]
   detail: any
@@ -51,6 +53,121 @@ function fakeServer(): Srv {
 let srv: Srv
 beforeEach(() => { srv = fakeServer() })
 afterEach(() => vi.restoreAllMocks())
+
+describe('App: search indexing and citations', () => {
+  const fileRow = (over = {}) => ({ id: 'f1', original_name: 'report.docx', kind: 'docx', size_bytes: 10, created_at: 't',
+    index_status: 'pending', chunk_count: 0, index_error: '', ...over })
+
+  it('refreshes a "preparing" badge by itself, then stops polling once the file is searchable', async () => {
+    srv.detail.files.push(fileRow())
+    render(<App />)
+    expect(await screen.findByText('Preparing for search…')).toBeInTheDocument()
+    setTimeout(() => Object.assign(srv.detail.files[0], { index_status: 'ready', chunk_count: 7 }), 60)  // the server finishes in the background
+    expect(await screen.findByText('Searchable · 7 passages')).toBeInTheDocument()
+    expect(screen.queryByText('Preparing for search…')).toBeNull()
+    const sessionCalls = () => (globalThis.fetch as any).mock.calls.filter((c: any[]) => String(c[0]).endsWith('/sessions/s1')).length
+    const before = sessionCalls()
+    await new Promise((r) => setTimeout(r, 120))
+    expect(sessionCalls()).toBe(before)  // no wasted requests once nothing is pending
+  })
+
+  it('stops polling the moment its conversation is deleted (no requests for a session that no longer exists)', async () => {
+    srv.detail.files.push(fileRow({ index_status: 'indexing' }))   // keeps polling active
+    let deleted = false
+    const base = globalThis.fetch as any
+    const calls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (u: string, i?: RequestInit) => {
+      const m = i?.method ?? 'GET'
+      if (deleted) calls.push(`${m} ${u}`)
+      if (m === 'DELETE' && u === '/api/sessions/s1') { deleted = true; return new Response(null, { status: 204 }) }
+      if (deleted && u === '/api/sessions' && m === 'GET') return json([])      // nothing left, so the app creates a new one
+      if (deleted && u === '/api/sessions' && m === 'POST') return json({ id: 's2', title: 'New chat', created_at: 't', updated_at: 't' }, 201)
+      if (deleted && u === '/api/sessions/s2') return json({ id: 's2', title: 'New chat', created_at: 't', updated_at: 't', messages: [], files: [], artifacts: [] })
+      if (deleted && u === '/api/sessions/s1') return json({ error: { code: 'not_found', message: 'session not found' } }, 404)
+      return base(u, i)
+    }))
+    vi.stubGlobal('confirm', () => true)   // this DOM environment has no window.confirm to spy on
+    render(<App />)
+    await screen.findByText('Preparing for search…')
+    await userEvent.hover(screen.getByRole('button', { name: 'New chat' }))
+    await userEvent.click(screen.getByRole('button', { name: /Delete conversation/ }))
+    await waitFor(() => expect(deleted).toBe(true))
+    const stray = () => calls.filter((c) => c === 'GET /api/sessions/s1').length
+    await new Promise((r) => setTimeout(r, 120))
+    const early = stray()
+    await new Promise((r) => setTimeout(r, 200))                     // many more poll intervals (mocked at 25 ms)
+    // one poll that was already in flight when the DELETE landed may still arrive; after that, polling must have stopped
+    expect(early).toBeLessThanOrEqual(1)
+    expect(stray()).toBe(early)
+  })
+
+  it('stops polling for good if the server says the conversation is gone', async () => {
+    srv.detail.files.push(fileRow({ index_status: 'indexing' }))
+    const base = globalThis.fetch as any
+    let gone = false, hits = 0
+    vi.stubGlobal('fetch', vi.fn(async (u: string, i?: RequestInit) => {
+      if (gone && u === '/api/sessions/s1') { hits++; return json({ error: { code: 'not_found', message: 'session not found' } }, 404) }
+      return base(u, i)
+    }))
+    render(<App />)
+    await screen.findByText('Preparing for search…')
+    gone = true                                                       // e.g. deleted from another tab
+    await new Promise((r) => setTimeout(r, 250))
+    expect(hits).toBe(1)                                              // one 404, then the timer is cleared
+  })
+
+  it('does not poll at all when every file is already settled', async () => {
+    srv.detail.files.push(fileRow({ index_status: 'ready', chunk_count: 2 }))
+    render(<App />)
+    await screen.findByText('Searchable · 2 passages')
+    const calls = () => (globalThis.fetch as any).mock.calls.length
+    const before = calls()
+    await new Promise((r) => setTimeout(r, 120))
+    expect(calls()).toBe(before)
+  })
+
+  it('shows stored citations on a reloaded conversation', async () => {
+    srv.detail.messages.push({ id: 'a1', role: 'assistant', content: 'Revenue was 331,839 [1].', meta: {}, created_at: 't',
+      citations: [{ ref: 1, source_type: 'document', title: 'report.docx', locator: 'Table 3', snippet: 'Total revenue | 331839', file_id: 'f1', url: null }] })
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: /^Source 1: report.docx, Table 3/ }))
+    expect(screen.getByText('Total revenue | 331839', { selector: 'blockquote' })).toBeInTheDocument()
+  })
+})
+
+describe('App: first-visit identity race', () => {
+  it('keeps every control disabled until the first load finishes (that request establishes the cookie)', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((r) => { release = r })
+    const base = globalThis.fetch as any
+    vi.stubGlobal('fetch', vi.fn(async (u: string, i?: RequestInit) => {
+      if (u === '/api/sessions' && (i?.method ?? 'GET') === 'GET') await gate   // the slow first request
+      return base(u, i)
+    }))
+    render(<App />)
+    expect(screen.getByRole('button', { name: '+ New chat' })).toBeDisabled()
+    expect(screen.getByLabelText('Message')).toBeDisabled()
+    expect(screen.getByLabelText('Attach a file')).toBeDisabled()
+    const sent = (globalThis.fetch as any).mock.calls.map((c: any[]) => `${c[1]?.method ?? 'GET'} ${c[0]}`)
+    expect(sent).toEqual(['GET /api/sessions'])           // nothing else may be in flight yet
+    release()
+    await waitFor(() => expect(screen.getByRole('button', { name: '+ New chat' })).toBeEnabled())
+    expect(screen.getByLabelText('Message')).toBeEnabled()
+  })
+
+  it('recovers instead of dead-ending when the opened conversation no longer exists', async () => {
+    const base = globalThis.fetch as any
+    vi.stubGlobal('fetch', vi.fn(async (u: string, i?: RequestInit) => {
+      if (u === '/api/sessions/s1') return json({ error: { code: 'not_found', message: 'session not found' } }, 404)
+      return base(u, i)
+    }))
+    render(<App />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('That conversation is no longer available.')
+    expect(screen.getByLabelText('Message')).toBeDisabled()               // nothing to talk to until the user picks one
+    await userEvent.click(screen.getByRole('button', { name: '+ New chat' }))
+    expect(screen.getByRole('button', { name: '+ New chat' })).toBeEnabled()  // the UI is still usable
+  })
+})
 
 describe('App', () => {
   it('boots into the existing conversation and shows the empty state', async () => {

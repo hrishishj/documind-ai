@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import NotFoundError
-from app.database.models import Artifact, ArtifactVersion, ChatSession, Message, TemplateProfile, UploadedFile
+from app.database.models import Artifact, ArtifactVersion, ChatSession, Citation, Message, TemplateProfile, UploadedFile
 from app.services.storage import LocalStorage
 from app.services.uploads import ValidatedUpload
 from app.workflows.state import FileRef
@@ -76,6 +76,21 @@ def save_profile(db: Session, file_id: str, profile: dict) -> None:
     db.commit()
 
 
+def set_index_status(db: Session, file_id: str, status: str, error: str = "", count: int = 0) -> None:
+    f = db.get(UploadedFile, file_id)
+    if f is not None:  # the file may have been deleted with its conversation while indexing was running
+        f.index_status, f.index_error, f.chunk_count = status, error[:500], count
+        db.commit()
+
+
+def add_citations(db: Session, message_id: str, citations: list[dict]) -> None:
+    for c in citations:
+        db.add(Citation(message_id=message_id, ref=c["n"], source_type="document", title=c["file_name"],
+                        file_id=c["file_id"] if db.get(UploadedFile, c["file_id"]) else None,
+                        locator=c["locator"], snippet=c["snippet"]))
+    db.commit()
+
+
 def get_file(db: Session, session_id: str, file_id: str) -> UploadedFile:
     f = db.get(UploadedFile, file_id)
     if f is None or f.session_id != session_id:  # never reveal another session's file
@@ -86,7 +101,7 @@ def get_file(db: Session, session_id: str, file_id: str) -> UploadedFile:
 def file_refs(db: Session, session_id: str) -> list[FileRef]:
     """Everything the workflow may refer to: uploads, plus the LATEST version of each generated artifact."""
     refs: list[FileRef] = [
-        FileRef(id=f.id, name=f.original_name, path=f.stored_path, format=f.kind, kind="upload")
+        FileRef(id=f.id, name=f.original_name, path=f.stored_path, format=f.kind, kind="upload", index_status=f.index_status)
         for f in db.scalars(select(UploadedFile).where(UploadedFile.session_id == session_id).order_by(UploadedFile.created_at))]
     arts = db.scalars(select(Artifact).where(Artifact.session_id == session_id).order_by(Artifact.created_at))
     for a in arts:

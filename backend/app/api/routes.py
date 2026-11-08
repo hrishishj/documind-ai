@@ -4,7 +4,7 @@ import re
 import secrets
 from collections.abc import Iterator
 
-from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -82,13 +82,34 @@ def get_session(session_id: str, db: Session = Depends(db_dep), owner: str = Dep
 
 @router.delete("/sessions/{session_id}", status_code=204)
 def delete_session(session_id: str, request: Request, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
-    store.delete_session(db, request.app.state.storage, session_id, owner)
+    store.get_session(db, session_id, owner)  # 404 before anything is touched
+    st = request.app.state
+    if st.indexer is not None:
+        try:
+            st.indexer.store.delete_namespace(session_id)  # the conversation's searchable passages go with it
+        except Exception:  # noqa: BLE001 - never block deleting the user's data because the vector service is down
+            log.exception("could not delete vector namespace for %s", session_id)
+    store.delete_session(db, st.storage, session_id, owner)
+
+
+def index_job(st, session_id: str, file_id: str, name: str, path) -> None:
+    """Background: extract -> embed -> store. Runs after the upload response so large files never block the request."""
+    with st.db.session() as db:
+        store.set_index_status(db, file_id, "indexing")
+    try:
+        n = st.indexer.index_file(session_id, file_id, name, path)
+        status, err = ("ready", "") if n else ("failed", "No searchable text was found (is this a scanned image?)")
+    except Exception as e:  # noqa: BLE001
+        log.exception("indexing failed for %s", file_id)
+        n, status, err = 0, "failed", f"{type(e).__name__}: {str(e)[:200]}"
+    with st.db.session() as db:
+        store.set_index_status(db, file_id, status, err, n)
 
 
 # ------------------------------------------------------------------ files
 @router.post("/sessions/{session_id}/files", response_model=UploadOut, status_code=201)
-def upload_file(session_id: str, request: Request, file: UploadFile = File(...), db: Session = Depends(db_dep),
-                owner: str = Depends(owner_dep)):
+def upload_file(session_id: str, request: Request, background: BackgroundTasks, file: UploadFile = File(...),
+                db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
     st, settings = request.app.state, request.app.state.settings
     store.get_session(db, session_id, owner)
     n_files, total = store.upload_usage(db, session_id)
@@ -113,6 +134,11 @@ def upload_file(session_id: str, request: Request, file: UploadFile = File(...),
             db.commit()
             path.unlink(missing_ok=True)
             raise AppError(f"the file could not be read as a {v.format.upper()} document: {type(e).__name__}")
+    if st.indexer is not None:
+        background.add_task(index_job, st, session_id, rec.id, v.display_name, path)
+    else:
+        store.set_index_status(db, rec.id, "skipped")
+        db.refresh(rec)
     return UploadOut(file=FileOut.model_validate(rec), analysis=analysis)
 
 
@@ -162,7 +188,9 @@ def _chat_events(st, session_id: str, message: str, slot: int) -> Iterator[str]:
             for node, upd in chunk.items():
                 state.update(upd or {})
                 yield _sse("node", {"node": node, "label": NODE_LABELS.get(node, node)})
-        response = state.get("response") or "Done."
+        # "Done." is only true after an edit; for anything else an empty reply is a failure to say so honestly
+        response = (state.get("response") or "").strip() or (
+            "Done." if state.get("artifact") else "Sorry, I couldn't produce an answer this time. Please try again.")
         meta: dict = {}
         art = state.get("artifact")
         with st.db.session() as db:
@@ -172,7 +200,13 @@ def _chat_events(st, session_id: str, message: str, slot: int) -> Iterator[str]:
                         "render": state.get("render")}
             msg = store.add_message(db, session_id, "assistant", response, meta)
             msg_id = msg.id
-        yield _sse("final", {"message_id": msg_id, "content": response, "meta": meta, "intent": state.get("intent")})
+            citations = state.get("citations") or []
+            if citations:
+                store.add_citations(db, msg_id, citations)
+        yield _sse("final", {"message_id": msg_id, "content": response, "meta": meta, "intent": state.get("intent"),
+                             "citations": [{"ref": c["n"], "title": c["file_name"], "locator": c["locator"],
+                                            "snippet": c["snippet"], "file_id": c["file_id"], "source_type": "document",
+                                            "url": None} for c in citations]})
     except AppError as e:
         yield _sse("error", {"code": e.code, "message": e.message})
     except Exception:  # noqa: BLE001

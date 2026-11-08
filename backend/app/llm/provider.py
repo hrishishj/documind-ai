@@ -136,6 +136,10 @@ class GroqLLM:
                     self.governor.settle(need, actual)
                 return result
             except Exception as e:  # noqa: BLE001 - classified below
+                if "tool_use_failed" in str(e) or "did not call a tool" in str(e):
+                    # The model answered in prose instead of the required structured form. That is a content problem
+                    # (callers retry with feedback), not an outage; reporting it as "unreachable" would be false.
+                    raise StructuredOutputError(f"the model did not return structured output: {str(e)[:160]}") from e
                 if attempt == self.retries or not _is_retryable(e):
                     raise ExternalServiceError(f"LLM call failed: {type(e).__name__}: {str(e)[:200]}") from e
                 wait = _retry_after(e)
@@ -143,9 +147,19 @@ class GroqLLM:
                 log.warning("LLM retry %d after %s (sleep %.1fs)", attempt + 1, type(e).__name__, wait)
                 time.sleep(wait)
 
+    @staticmethod
+    def _history_as_text(history: list[tuple[str, str]] | None, user: str) -> str:
+        """Fold earlier turns into the prompt as quoted text. Passed as real assistant messages they prime the model to
+        reply in prose, which makes Groq reject the call ('tool choice is required, but model did not call a tool')."""
+        if not history:
+            return user
+        lines = [f"{'User' if role == 'human' else 'Assistant'}: {' '.join(text.split())[:400]}" for role, text in history[-6:]]
+        return "Conversation so far (for context only):\n" + "\n".join(lines) + "\n\nCurrent request:\n" + user
+
     def structured(self, schema, system, user, history=None, max_tokens=None):
         mt = max_tokens or STRUCTURED_MAX_TOKENS
         kw = {"method": self.method} if self.method else {}
+        user, history = self._history_as_text(history, user), None
         res = self._call(lambda: self._ChatGroq(max_tokens=mt, **self._kw).with_structured_output(schema, include_raw=True, **kw),
                          system, user, history, mt)
         if res.get("parsed") is None:  # the model answered but not in the schema: a retryable *content* problem

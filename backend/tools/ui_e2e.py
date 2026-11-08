@@ -100,10 +100,12 @@ def main():
         expect(page.locator(".artifact-card")).to_have_count(2, timeout=15000)
 
         # --- clean up through the UI (also exercises delete + the confirm dialog)
+        before = page.locator(".session-list li").count()
         page.once("dialog", lambda d: d.accept())
         page.locator(".session-list li.active").hover()
         page.locator(".session-list li.active .icon-btn").click()
         expect(page.locator(".artifact-card")).to_have_count(0, timeout=15000)
+        expect(page.locator(".session-list li")).to_have_count(before - 1, timeout=30000)  # wait: closing early would cancel the DELETE
         browser.close()
 
     print("screenshots:", sorted(p.name for p in shots.iterdir()))

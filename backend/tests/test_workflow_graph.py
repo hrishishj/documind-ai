@@ -12,18 +12,20 @@ from app.workflows.graph import MAX_ATTEMPTS, Deps, build_graph
 class FakeLLM:
     """Scripted stand-in for Groq. Records every call so tests can assert what was (not) sent to the model."""
 
-    def __init__(self, plans=(), routes=(), texts=()):
-        self.plans, self.routes, self.texts = list(plans), list(routes), list(texts)
+    def __init__(self, plans=(), routes=(), texts=(), answers=()):
+        self.plans, self.routes, self.texts, self.answers = list(plans), list(routes), list(texts), list(answers)
         self.calls: list[tuple[str, str, str]] = []  # (kind, system, user)
 
     def structured(self, schema, system, user, history=None, max_tokens=None):
-        kind = "route" if schema is RouteDecision else "plan"
+        from app.rag.answer import GroundedAnswer
+        kind = "route" if schema is RouteDecision else "qa" if schema is GroundedAnswer else "plan"
         self.calls.append((kind, system, user))
-        item = (self.routes if kind == "route" else self.plans).pop(0)
+        item = {"route": self.routes, "qa": self.answers, "plan": self.plans}[kind].pop(0)
         if isinstance(item, Exception):
             raise item
-        return item if not isinstance(item, dict) else (item if kind == "route" else schema.model_validate(item)) \
-            if kind == "plan" else RouteDecision(**item)
+        if not isinstance(item, dict):
+            return item
+        return RouteDecision(**item) if kind == "route" else schema.model_validate(item)
 
     def text(self, system, user, history=None, max_tokens=None):
         self.calls.append(("text", system, user))

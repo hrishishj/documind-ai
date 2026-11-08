@@ -9,6 +9,7 @@ class FileRef(TypedDict, total=False):
     format: str        # docx | pptx | xlsx | pdf | txt ...
     kind: str          # "upload" | "artifact"
     version: int       # artifacts only
+    index_status: str  # uploads: pending | indexing | ready | failed | skipped
 
 
 class ChatState(TypedDict, total=False):

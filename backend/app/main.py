@@ -18,8 +18,27 @@ from app.workflows.graph import Deps, build_graph
 log = logging.getLogger(__name__)
 
 
-def create_app(settings: Settings | None = None, llm=None, checkpointer=None, database: Database | None = None) -> FastAPI:
-    """Build the app. Collaborators can be injected (tests pass a fake LLM, in-memory checkpointer and test DB)."""
+def _default_indexer(settings: Settings):
+    """Pinecone when a key is configured, otherwise an in-memory store (works, but is lost on restart)."""
+    from app.rag.embeddings import get_embedder
+    from app.rag.retrieve import Indexer
+    from app.rag.store import MemoryStore, PineconeStore
+
+    if settings.pinecone_api_key:
+        store = PineconeStore(settings.pinecone_api_key, settings.pinecone_index_name, settings.embedding_dim)
+    else:
+        log.warning("PINECONE_API_KEY not set: using an in-memory vector store (document search is lost on restart)")
+        store = MemoryStore()
+    return Indexer(get_embedder(), store)
+
+
+_UNSET = object()
+
+
+def create_app(settings: Settings | None = None, llm=None, checkpointer=None, database: Database | None = None,
+               indexer=_UNSET) -> FastAPI:
+    """Build the app. Collaborators can be injected (tests pass a fake LLM, in-memory checkpointer, test DB and indexer).
+    `indexer=None` explicitly disables document search; leaving it unset builds the real one from the settings."""
     settings = settings or get_settings()
     logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -47,7 +66,8 @@ def create_app(settings: Settings | None = None, llm=None, checkpointer=None, da
         if model is None and settings.groq_api_key:
             from app.llm.provider import GroqLLM
             model = GroqLLM()
-        st.graph = build_graph(Deps(model, st.storage), checkpointer=cp) if model is not None else None
+        st.indexer = _default_indexer(settings) if indexer is _UNSET else indexer
+        st.graph = build_graph(Deps(model, st.storage, retriever=st.indexer), checkpointer=cp) if model is not None else None
         if st.graph is None:
             log.warning("GROQ_API_KEY not set: uploads work, chat is disabled")
         yield
@@ -64,8 +84,10 @@ def create_app(settings: Settings | None = None, llm=None, checkpointer=None, da
 
     @app.get("/health")
     def health() -> dict:
+        idx = getattr(app.state, "indexer", None)
         return {"status": "ok", "app": settings.app_name, "env": settings.app_env,
-                "chat_enabled": bool(getattr(app.state, "graph", None))}
+                "chat_enabled": bool(getattr(app.state, "graph", None)),
+                "retrieval": None if idx is None else type(idx.store).__name__.replace("Store", "").lower()}
 
     return app
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, type ArtifactOut, type FileOut, type Message, type Session } from './api'
+import { api, type ArtifactOut, type Citation, type FileOut, type Message, type Session } from './api'
 import { RichText } from './RichText'
 import { ACCEPT, fmtSize } from './utils'
 
@@ -55,6 +55,28 @@ function ArtifactCard({ sessionId, m }: { sessionId: string; m: Message }) {
   )
 }
 
+function SourceList({ msgId, citations, active, onToggle }: {
+  msgId: string; citations: Citation[]; active: number | null; onToggle: (ref: number) => void
+}) {
+  return (
+    <div className="sources" aria-label="Sources">
+      <div className="sources-title">Sources</div>
+      <ol>
+        {citations.map((c) => (
+          <li key={c.ref} id={`src-${msgId}-${c.ref}`} className={active === c.ref ? 'active' : ''}>
+            <button type="button" className="src-btn" aria-expanded={active === c.ref} onClick={() => onToggle(c.ref)}>
+              <span className="cite static">{c.ref}</span>
+              <strong>{c.title}</strong>
+              {c.locator && <span className="muted">{c.locator}</span>}
+            </button>
+            {active === c.ref && <blockquote>{c.snippet}</blockquote>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 export function MessageList(props: {
   sessionId: string
   messages: Message[]
@@ -62,6 +84,12 @@ export function MessageList(props: {
   busy: boolean
 }) {
   const end = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState<Record<string, number | null>>({})
+  const toggle = (msgId: string, ref: number) => setActive((a) => ({ ...a, [msgId]: a[msgId] === ref ? null : ref }))
+  const show = (msgId: string, ref: number) => {
+    setActive((a) => ({ ...a, [msgId]: ref }))
+    setTimeout(() => document.getElementById(`src-${msgId}-${ref}`)?.scrollIntoView?.({ block: 'nearest' }), 0)
+  }
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [props.messages.length, props.steps.length])
   return (
     <div className="messages" role="log" aria-live="polite" aria-label="Conversation">
@@ -80,7 +108,10 @@ export function MessageList(props: {
         <div key={m.id} className={`msg ${m.role}`}>
           <div className="who">{m.role === 'user' ? 'You' : 'DocuMind'}</div>
           <div className="bubble">
-            <RichText text={m.content} />
+            <RichText text={m.content} citations={m.citations} onCite={(r) => show(m.id, r)} />
+            {m.role === 'assistant' && m.citations && m.citations.length > 0 && (
+              <SourceList msgId={m.id} citations={m.citations} active={active[m.id] ?? null} onToggle={(r) => toggle(m.id, r)} />
+            )}
             {m.role === 'assistant' && <ArtifactCard sessionId={props.sessionId} m={m} />}
           </div>
         </div>
@@ -104,12 +135,12 @@ export function MessageList(props: {
 }
 
 // ------------------------------------------------------------------ composer
-export function Composer(props: { busy: boolean; onSend: (text: string) => void; onFiles: (files: File[]) => void; onStop: () => void }) {
+export function Composer(props: { busy: boolean; disabled?: boolean; onSend: (text: string) => void; onFiles: (files: File[]) => void; onStop: () => void }) {
   const [text, setText] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
   const submit = () => {
     const t = text.trim()
-    if (!t || props.busy) return
+    if (!t || props.busy || props.disabled) return
     props.onSend(t)
     setText('')
   }
@@ -117,10 +148,11 @@ export function Composer(props: { busy: boolean; onSend: (text: string) => void;
     <form className="composer" onSubmit={(e) => { e.preventDefault(); submit() }}>
       <input ref={fileInput} type="file" multiple hidden accept={ACCEPT} data-testid="file-input"
              onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) props.onFiles(f); e.target.value = '' }} />
-      <button type="button" className="icon-btn attach" aria-label="Attach a file" onClick={() => fileInput.current?.click()} disabled={props.busy}>📎</button>
+      <button type="button" className="icon-btn attach" aria-label="Attach a file" onClick={() => fileInput.current?.click()} disabled={props.busy || props.disabled}>📎</button>
       <textarea
         aria-label="Message"
-        placeholder="Ask for a change to your document…"
+        disabled={props.disabled}
+        placeholder={props.disabled ? 'Loading…' : 'Ask for a change to your document…'}
         value={text}
         rows={1}
         maxLength={4000}
@@ -129,12 +161,22 @@ export function Composer(props: { busy: boolean; onSend: (text: string) => void;
       />
       {props.busy
         ? <button type="button" className="btn" onClick={props.onStop}>Stop</button>
-        : <button type="submit" className="btn primary" disabled={!text.trim()}>Send</button>}
+        : <button type="submit" className="btn primary" disabled={!text.trim() || props.disabled}>Send</button>}
     </form>
   )
 }
 
 // ------------------------------------------------------------------ side panel
+function IndexBadge({ f }: { f: FileOut }) {
+  if (f.index_status === 'pending' || f.index_status === 'indexing')
+    return <div className="index-status busy" role="status">Preparing for search…</div>
+  if (f.index_status === 'ready')
+    return <div className="index-status ok">Searchable · {f.chunk_count} passage{f.chunk_count === 1 ? '' : 's'}</div>
+  if (f.index_status === 'failed')
+    return <div className="index-status bad" title={f.index_error}>Not searchable{f.index_error ? `: ${f.index_error}` : ''}</div>
+  return null
+}
+
 export function FilesPanel(props: {
   sessionId: string
   files: FileOut[]
@@ -156,6 +198,7 @@ export function FilesPanel(props: {
               <span className="fname" title={f.original_name}>{f.original_name}</span>
               <span className="muted">{fmtSize(f.size_bytes)}</span>
             </div>
+            <IndexBadge f={f} />
             <div className="file-actions">
               {analysable(f.kind) && <button className="btn small" onClick={() => props.onAnalysis(f)}>Template analysis</button>}
               <a className="btn small" href={api.fileUrl(props.sessionId, f.id)} download>Download</a>
