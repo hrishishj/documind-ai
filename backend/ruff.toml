@@ -1,0 +1,6 @@
+# Bug-class lint: syntax errors, pyflakes (unused/undefined names), flake8-bugbear.
+# B904/B905 are style-only here (error chaining / zip strictness) and B008 is FastAPI's Depends() idiom.
+line-length = 120
+[lint]
+select = ["E9", "F", "B"]
+ignore = ["B008", "B904", "B905"]
