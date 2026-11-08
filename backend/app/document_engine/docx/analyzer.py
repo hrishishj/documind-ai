@@ -11,7 +11,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Length
 
-from app.document_engine.common import clean, emu_to_in, sha256, twips_to_in
+from app.document_engine.common import clean, emu_to_in, parse_theme_xml, sha256, twips_to_in
 
 NS = {
     "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
@@ -27,24 +27,7 @@ WRAP_TAGS = ("wrapNone", "wrapSquare", "wrapTight", "wrapThrough", "wrapTopAndBo
 def _theme(doc) -> dict:
     for part in doc.part.package.iter_parts():
         if str(part.partname).startswith("/word/theme/") and str(part.partname).endswith(".xml"):
-            from lxml import etree
-
-            root = etree.fromstring(part.blob)
-            fonts = {}
-            for kind in ("major", "minor"):
-                el = root.find(f".//a:{kind}Font/a:latin", NS)
-                fonts[kind] = el.get("typeface") if el is not None else None
-            colors = {}
-            scheme = root.find(".//a:clrScheme", NS)
-            if scheme is not None:
-                for c in scheme:
-                    name = etree.QName(c).localname
-                    child = c[0] if len(c) else None
-                    if child is not None:
-                        # srgbClr@val is hex; sysClr@val is a name ("window") and lastClr holds the hex.
-                        kind = etree.QName(child).localname
-                        colors[name] = child.get("val") if kind == "srgbClr" else child.get("lastClr")
-            return {"fonts": fonts, "colors": colors}
+            return parse_theme_xml(part.blob)
     return {"fonts": {}, "colors": {}}
 
 

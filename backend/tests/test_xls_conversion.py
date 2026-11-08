@@ -65,8 +65,9 @@ def test_every_cell_value_and_style_matches(converted):
                 f = book.font_list[xf.font_index]
                 if cell.font.name != f.name or abs(cell.font.size - f.height / 20.0) > 0.01:
                     problems.append((where, "font", (f.name, f.height / 20), (cell.font.name, cell.font.size)))
-                if bool(cell.font.bold) != bool(f.bold) or bool(cell.font.italic) != bool(f.italic):
-                    problems.append((where, "bold/italic", (f.bold, f.italic), (cell.font.bold, cell.font.italic)))
+                # bold is defined by font weight (what Excel uses), NOT xlrd's legacy `bold` bit
+                if bool(cell.font.bold) != (f.weight >= 700) or bool(cell.font.italic) != bool(f.italic):
+                    problems.append((where, "bold/italic", (f.weight, f.italic), (cell.font.bold, cell.font.italic)))
                 want_fill = rgb_of(book, xf.background.pattern_colour_index) if xf.background.fill_pattern == 1 else None
                 got_fill = cell.fill.fgColor.rgb[-6:] if cell.fill.fill_type == "solid" else None
                 if want_fill != got_fill:
@@ -84,6 +85,15 @@ def test_every_cell_value_and_style_matches(converted):
                     problems.append((where, "halign", xf.alignment.hor_align, cell.alignment.horizontal))
     assert checked > 1000, "audit did not examine enough cells"
     assert not problems, f"{len(problems)} mismatches, first 10: {problems[:10]}"
+
+
+def test_bold_matches_what_excel_itself_reports(converted):
+    """Regression: xlrd's legacy `bold` bit is unset in real files; Excel (COM) reported these as bold."""
+    _, wb, _ = converted
+    for sheet, addr in (("ome statements", "A5"), ("ome statements", "C5"), ("sheets", "A6"),
+                        ("uncertain tax positions", "D6")):
+        assert wb[sheet][addr].font.b is True, (sheet, addr)
+    assert wb["ome statements"]["A1"].font.b is False  # and plain cells stay plain
 
 
 def test_non_anchor_merged_cell_styles_survive_in_file(dst_path, converted):

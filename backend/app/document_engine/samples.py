@@ -41,6 +41,75 @@ def _make_floating(run, x_emu: int, y_emu: int) -> None:
     drawing.replace(inline, anchor)
 
 
+def build_pptx(path: Path) -> dict:
+    """PPTX with known layout/format; returns the ground truth."""
+    from pptx import Presentation
+    from pptx.chart.data import CategoryChartData
+    from pptx.dml.color import RGBColor as PRGB
+    from pptx.enum.chart import XL_CHART_TYPE
+    from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+    from pptx.util import Inches as PIn, Pt as PPt
+
+    prs = Presentation()
+    prs.slide_width, prs.slide_height = PIn(13.333), PIn(7.5)  # 16:9
+
+    master = prs.slide_masters[0]
+    theme = master.part.part_related_by(RT.THEME)
+    import re
+
+    blob = re.sub(rb'(<a:majorFont>\s*<a:latin typeface=")[^"]*', rb"\1Georgia", theme.blob)
+    blob = re.sub(rb'(<a:minorFont>\s*<a:latin typeface=")[^"]*', rb"\1Verdana", blob)
+    assert blob != theme.blob, "theme font patch had no effect"
+    theme._blob = blob
+
+    from pptx.oxml.shapes.picture import CT_Picture
+
+    def add_pic(owner, blob, x, y, w, h, name):
+        """python-pptx only exposes add_picture on slides; masters/layouts need the part-level route."""
+        _, rid = owner.part.get_or_add_image_part(BytesIO(blob))
+        owner.shapes._spTree.append(
+            CT_Picture.new_pic(owner.shapes._next_shape_id, name, name, rid, PIn(x), PIn(y), PIn(w), PIn(h)))
+
+    add_pic(master, png_bytes((180, 20, 20), (200, 100)), 11.5, 0.3, 1.2, 0.6, "Master Logo")
+    layout_title_only = next(l for l in prs.slide_layouts if l.name == "Title Only")
+    add_pic(layout_title_only, png_bytes((20, 20, 180), (100, 100)), 0.4, 6.8, 0.5, 0.5, "Layout Logo")
+
+    s1 = prs.slides.add_slide(next(l for l in prs.slide_layouts if l.name == "Title Slide"))
+    s1.shapes.title.text = "Annual Review"
+    s1.placeholders[1].text = "FY2024"
+
+    s2 = prs.slides.add_slide(next(l for l in prs.slide_layouts if l.name == "Title and Content"))
+    s2.shapes.title.text = "Highlights"
+    s2.placeholders[1].text = "Revenue up 12%"
+    tbl = s2.shapes.add_table(3, 2, PIn(1), PIn(4), PIn(5), PIn(1.5)).table
+    tbl.cell(0, 0).text, tbl.cell(0, 1).text = "Metric", "Value"
+    s2.shapes.add_picture(BytesIO(png_bytes((0, 150, 0), (160, 80))), PIn(8), PIn(3), width=PIn(3), height=PIn(1.5))
+    s2.notes_slide.notes_text_frame.text = "Speaker notes here"
+
+    s3 = prs.slides.add_slide(layout_title_only)
+    s3.shapes.title.text = "Chart"
+    tb = s3.shapes.add_textbox(PIn(1), PIn(1.5), PIn(6), PIn(1))
+    run = tb.text_frame.paragraphs[0].add_run()
+    run.text = "Styled text"
+    run.font.name, run.font.size, run.font.bold = "Arial", PPt(24), True
+    run.font.color.rgb = PRGB(0xC0, 0x00, 0x00)
+    cd = CategoryChartData()
+    cd.categories = ["A", "B"]
+    cd.add_series("S1", (1, 2))
+    s3.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, PIn(1), PIn(3), PIn(6), PIn(3.5), cd)
+    s3.background.fill.solid()
+    s3.background.fill.fore_color.rgb = PRGB(0xF2, 0xF2, 0xF2)
+    prs.save(path)
+    return {
+        "size_in": (13.333, 7.5), "major": "Georgia", "minor": "Verdana", "n_slides": 3,
+        "master_logo": {"x": 11.5, "y": 0.3, "w": 1.2},
+        "layout_logo": {"layout": "Title Only", "x": 0.4, "y": 6.8, "w": 0.5, "h": 0.5},
+        "s2_picture": {"x": 8.0, "y": 3.0, "w": 3.0, "h": 1.5}, "s2_table": {"x": 1.0, "y": 4.0, "w": 5.0, "rows": 3, "cols": 2},
+        "s3_text": {"font": "Arial", "size": 24.0, "bold": True, "color": "C00000"}, "s3_bg": "F2F2F2",
+        "s3_chart": {"x": 1.0, "y": 3.0, "w": 6.0, "h": 3.5},
+    }
+
+
 def build_xlsx(path: Path) -> dict:
     """XLSX with known formatting; returns the ground truth."""
     from datetime import date
