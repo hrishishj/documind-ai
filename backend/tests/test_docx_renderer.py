@@ -116,6 +116,21 @@ def test_table_cell_and_row_ops_keep_borders_and_shading(src, tmp_path):
     assert prof_b["borders"] == prof_a["borders"] and prof_b["cell_shading"] == prof_a["cell_shading"]
 
 
+def test_add_row_never_silently_drops_values_when_the_template_row_is_merged(src, tmp_path):
+    # the fixture's last row is "Merged total" (2 cells in a 3-column table): cloning it for 3 values would lose one
+    with pytest.raises(PlanError) as e:
+        render_docx(src, plan({"op": "docx.add_row", "table": 0, "values": ["West", "5", "6"], "like_row": -1}), tmp_path / "o.docx")
+    msg = e.value.errors[0]
+    assert "only 2 cells" in msg and "3 values" in msg and "[1, 0]" in msg  # latest-first candidates
+    assert "not the header row" in msg
+    res = render_docx(src, plan({"op": "docx.add_row", "table": 0, "values": ["H", "1", "2"], "like_row": 0}), tmp_path / "hdr.docx")
+    assert any("usually the header" in w for w in res.warnings)  # cloning the header row is allowed but flagged
+    # and the corrected plan succeeds with all three values present
+    out = tmp_path / "ok.docx"
+    render_docx(src, plan({"op": "docx.add_row", "table": 0, "values": ["West", "5", "6"], "like_row": 1}), out)
+    assert [c.text for c in Document(str(out)).tables[0].rows[-1].cells] == ["West", "5", "6"]
+
+
 def test_delete_row(src, tmp_path):
     out = tmp_path / "o.docx"
     render_docx(src, plan({"op": "docx.delete_row", "table": 0, "row": 1}), out)

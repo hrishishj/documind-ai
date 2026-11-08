@@ -170,6 +170,20 @@ class EditPlan(BaseModel):
         return self
 
 
+def plan_model_for(fmt: str) -> type[BaseModel]:
+    """Format-specific plan schema for the LLM: a smaller JSON schema (fewer tokens) in which operations of
+    other formats cannot even be expressed. Convert the result with `EditPlan.model_validate(x.model_dump())`."""
+    from pydantic import create_model
+
+    union = {"docx": DocxOp, "pptx": PptxOp, "xlsx": XlsxOp}[fmt]
+    return create_model(
+        f"{fmt.capitalize()}Plan", __config__=ConfigDict(extra="forbid"), __doc__=f"Edit plan for a {fmt} document.",
+        format=(Literal[fmt], fmt),  # type: ignore[valid-type]
+        summary=(str, Field(default="", description="One or two sentences describing the change, or why nothing could be done")),
+        ops=(list[union], Field(default_factory=list, max_length=200)),  # type: ignore[valid-type]
+    )
+
+
 class RenderResult(BaseModel):
     applied: int = 0
     warnings: list[str] = Field(default_factory=list)

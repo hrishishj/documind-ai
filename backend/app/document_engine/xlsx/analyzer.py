@@ -70,12 +70,25 @@ def _image_info(img) -> dict:
     return info
 
 
+PREVIEW_ROWS, PREVIEW_COLS, PREVIEW_CHARS = 8, 12, 24
+
+
+def _show(v) -> str:
+    s = v.isoformat(sep=" ") if hasattr(v, "isoformat") else str(v)
+    return s if len(s) <= PREVIEW_CHARS else s[:PREVIEW_CHARS - 3] + "..."
+
+
 def _sheet(ws) -> dict:
     cells = Counter(); fills = Counter(); fmts = Counter(); fonts = Counter(); bordered = 0
     header = None
     n = 0
+    preview, last_data_row = [], 0
     for row in ws.iter_rows():
         non_empty = [c for c in row if c.value is not None]
+        if non_empty:
+            last_data_row = row[0].row
+            if len(preview) < PREVIEW_ROWS:  # values (not styles): what an editor needs to target cells
+                preview.append({"row": row[0].row, "values": {c.coordinate: _show(c.value) for c in non_empty[:PREVIEW_COLS]}})
         if header is None and len(non_empty) >= 2:
             header = {"row": non_empty[0].row, "cells": {c.coordinate: _cell_style(c) for c in non_empty[:12]}}
         for c in non_empty:
@@ -108,7 +121,7 @@ def _sheet(ws) -> dict:
         "merged_count": len(merged), "merged_ranges": merged[:MAX_DETAIL],
         "column_widths": dict(list(widths.items())[:MAX_DETAIL]), "column_widths_count": len(widths),
         "row_heights": dict(list(heights.items())[:MAX_DETAIL]), "row_heights_count": len(heights),
-        "header_row": header,
+        "header_row": header, "preview": preview, "last_data_row": last_data_row,
         "conditional_formatting": cf[:MAX_DETAIL] or None,
         "data_validations": [{"type": d.type, "range": str(d.sqref), "formula1": d.formula1}
                              for d in ws.data_validations.dataValidation][:MAX_DETAIL] or None,

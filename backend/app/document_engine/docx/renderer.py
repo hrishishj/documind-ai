@@ -170,6 +170,19 @@ def _resolve(ctx: _Ctx, op, errs: list[str]):
         after = ctx.row(t, op.table, op.after_row, errs, "after_row")
         if like is None or after is None:
             return None
+        n_cells = len(like.findall(qn("w:tc")))
+        if len(op.values) > n_cells:  # silently dropping a value would lose the user's data: reject so the plan is fixed
+            rows = t.findall(qn("w:tr"))
+            # latest rows first: data rows tend to resemble later rows; row 0 is usually the (differently styled) header
+            wide = [i for i, r in reversed(list(enumerate(rows))) if len(r.findall(qn("w:tc"))) >= len(op.values) and r not in ctx.deleted]
+            errs.append(f"like_row {rows.index(like)} of table {op.table} has only {n_cells} cells (merged cells?) but "
+                        f"{len(op.values)} values were given; use an existing DATA row (not the header row 0) with at least "
+                        f"{len(op.values)} cells, candidates: {wide[:4] or 'none exist'}")
+            return None
+        rows_all = t.findall(qn("w:tr"))
+        if like is rows_all[0] and len(rows_all) > 1:
+            ctx.warnings.append(f"add_row on table {op.table} clones row 0, which is usually the header; "
+                                "the new row may look like a header (use an existing data row as like_row)")
 
         def do():
             new = copy.deepcopy(like)

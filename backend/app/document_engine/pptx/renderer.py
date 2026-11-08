@@ -17,6 +17,9 @@ from app.document_engine.pptx.analyzer import open_presentation
 R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 P14_SLDID = "{http://schemas.microsoft.com/office/powerpoint/2010/main}sldId"
 SHAPE_TAGS = ("p:sp", "p:pic", "p:graphicFrame", "p:grpSp", "p:cxnSp")
+from pptx.enum.shapes import PP_PLACEHOLDER  # noqa: E402
+
+SKIPPED_PLACEHOLDERS = {PP_PLACEHOLDER.DATE, PP_PLACEHOLDER.FOOTER, PP_PLACEHOLDER.SLIDE_NUMBER}
 COPYABLE_RELS = {RT.IMAGE, RT.HYPERLINK}
 SKIP_RELS = {RT.SLIDE_LAYOUT, RT.NOTES_SLIDE}
 
@@ -222,10 +225,13 @@ def _resolve(ctx: _Ctx, op, errs: list[str]):
         if layout is None:
             errs.append(f"layout '{op.layout}' not found; available: {sorted(ctx.layouts)}")
             return None
-        idxs = {str(p.placeholder_format.idx): p.placeholder_format.type for p in layout.placeholders}
+        # python-pptx does not instantiate date/footer/slide-number placeholders on new slides, so text for them
+        # would be silently dropped; only offer (and accept) the placeholders that really get created.
+        idxs = {str(p.placeholder_format.idx): p.placeholder_format.type for p in layout.placeholders
+                if p.placeholder_format.type not in SKIPPED_PLACEHOLDERS}
         bad = [i for i in op.texts if i not in idxs]
         if bad:
-            errs.append(f"layout '{op.layout}' has no placeholder idx {bad}; available idx: {sorted(idxs)}")
+            errs.append(f"layout '{op.layout}' has no fillable placeholder idx {bad}; available idx: {sorted(idxs)}")
             return None
         if op.position is not None and not 1 <= op.position <= ctx.n + 1:
             errs.append(f"position {op.position} invalid: deck will have {ctx.n} slides (valid 1..{ctx.n + 1})")
