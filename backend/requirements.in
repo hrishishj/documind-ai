@@ -24,3 +24,4 @@ pillow
 python-magic-bin
 pytest
 pytest-asyncio
+xlrd

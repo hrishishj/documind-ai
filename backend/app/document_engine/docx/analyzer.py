@@ -3,6 +3,7 @@
 Everything here is deterministic (no LLM). The profile records what the file *actually*
 contains so downstream edit planning can't hallucinate layout.
 """
+from collections import Counter
 from pathlib import Path
 
 from docx import Document
@@ -182,13 +183,26 @@ def _borders(tbl_el) -> dict:
     return out
 
 
+MAX_DETAIL = 40  # per-cell lists above this size are replaced by aggregate summaries
+NO_BORDER = (None, "nil", "none")
+
+
+def _border_attrs(b) -> dict:
+    sz, color = b.get(qn("w:sz")), b.get(qn("w:color"))
+    return clean({"style": b.get(qn("w:val")), "size_eighths_pt": int(sz) if sz else None,
+                  "color": None if color in (None, "auto") else color})
+
+
 def _table(tbl, index: int) -> dict:
     el = tbl._tbl
     grid = [twips_to_in(g.get(qn("w:w"))) for g in el.findall("w:tblGrid/w:gridCol", NS)]
-    merged = []
-    shading = {}
+    merged, shading = [], {}
+    fills: Counter = Counter()
+    cell_borders: dict[str, dict] = {}  # side -> {"cells": n, "example": {...}} (visible borders only)
+    n_cells = 0
     for ri, row in enumerate(tbl.rows):
         for ci, tc in enumerate(row._tr.findall("w:tc", NS)):
+            n_cells += 1
             span = tc.find("w:tcPr/w:gridSpan", NS)
             vm = tc.find("w:tcPr/w:vMerge", NS)
             if span is not None or vm is not None:
@@ -197,19 +211,98 @@ def _table(tbl, index: int) -> dict:
             shd = tc.find("w:tcPr/w:shd", NS)
             if shd is not None and shd.get(qn("w:fill")) not in (None, "auto"):
                 shading[f"{ri},{ci}"] = shd.get(qn("w:fill"))
+                fills[shd.get(qn("w:fill"))] += 1
+            tcb = tc.find("w:tcPr/w:tcBorders", NS)
+            if tcb is not None:
+                for side in ("top", "left", "bottom", "right"):
+                    b = tcb.find(f"w:{side}", NS)
+                    if b is not None and b.get(qn("w:val")) not in NO_BORDER:
+                        slot = cell_borders.setdefault(side, {"cells": 0, "example": _border_attrs(b)})
+                        slot["cells"] += 1
     first_row = [c.text for c in tbl.rows[0].cells] if tbl.rows else []
-    return clean({
+    out = {
         "index": index, "style": tbl.style.name if tbl.style is not None else None,
         "rows": len(tbl.rows), "cols": len(tbl.columns), "column_widths_in": grid,
-        "borders": _borders(el), "cell_shading": shading, "merged_cells": merged,
-        "header_row_text": first_row,
-    })
+        "borders": _borders(el), "cell_borders": cell_borders, "shading_summary": dict(fills),
+        "merged_count": len(merged), "header_row_text": first_row[:12],
+    }
+    if len(shading) <= MAX_DETAIL:
+        out["cell_shading"] = shading
+    if len(merged) <= MAX_DETAIL:
+        out["merged_cells"] = merged
+    return clean(out)
+
+
+# ---------- document-wide formatting census ----------
+def _census(doc, defaults) -> dict:
+    """Text-weighted distribution of the formatting readers actually see (direct formatting
+    included, table text included). Style-level fonts alone can be badly misleading."""
+    from docx.enum.style import WD_STYLE_TYPE
+
+    style_font: dict[str | None, dict] = {}
+
+    def pstyle_font(p):
+        ppr = p.find("w:pPr/w:pStyle", NS)
+        sid = ppr.get(qn("w:val")) if ppr is not None else None
+        if sid not in style_font:
+            try:
+                st = doc.styles.get_by_id(sid, WD_STYLE_TYPE.PARAGRAPH) if sid else doc.styles.default(WD_STYLE_TYPE.PARAGRAPH)
+                style_font[sid] = _effective_font(st, defaults) if st is not None else dict(defaults)
+            except Exception:
+                style_font[sid] = dict(defaults)
+        return style_font[sid]
+
+    fonts, sizes, colors = Counter(), Counter(), Counter()
+    bold = italic = underline = total = 0
+    for p in doc.element.body.iter(qn("w:p")):
+        base = pstyle_font(p)
+        for r in p.findall("w:r", NS):
+            n = sum(len(t.text or "") for t in r.findall("w:t", NS))
+            if not n:
+                continue
+            rpr = r.find("w:rPr", NS)
+            rf = rpr.find("w:rFonts", NS) if rpr is not None else None
+            sz = rpr.find("w:sz", NS) if rpr is not None else None
+            col = rpr.find("w:color", NS) if rpr is not None else None
+            fonts[(rf.get(qn("w:ascii")) if rf is not None and rf.get(qn("w:ascii")) else base.get("name")) or "?"] += n
+            sizes[(int(sz.get(qn("w:val"))) / 2 if sz is not None else base.get("size_pt")) or 0] += n
+            c = col.get(qn("w:val")) if col is not None else base.get("color")
+            colors[c or "auto"] += n
+            total += n
+            if rpr is not None:
+                def on(tag):
+                    e = rpr.find(f"w:{tag}", NS)
+                    return e is not None and e.get(qn("w:val")) not in ("0", "false", "off")
+                bold += n if on("b") else 0
+                italic += n if on("i") else 0
+                underline += n if (rpr.find("w:u", NS) is not None and rpr.find("w:u", NS).get(qn("w:val")) != "none") else 0
+
+    def top(c, k=6):
+        return [{"value": v, "share": round(n / total, 3)} for v, n in c.most_common(k)] if total else []
+
+    # paragraph borders (rules/lines) aggregated
+    pb: Counter = Counter()
+    for b in doc.element.body.iter(qn("w:pBdr")):
+        for side in b:
+            if side.get(qn("w:val")) not in NO_BORDER:
+                a = _border_attrs(side)
+                pb[(side.tag.split("}")[1], a.get("style"), a.get("size_eighths_pt"), a.get("color"))] += 1
+    aligns = Counter(j.get(qn("w:val")) for j in doc.element.body.iter(qn("w:jc")))
+    return {
+        "text_chars": total, "fonts": top(fonts), "sizes_pt": top(sizes), "colors": top(colors),
+        "bold_share": round(bold / total, 3) if total else 0, "italic_share": round(italic / total, 3) if total else 0,
+        "underline_share": round(underline / total, 3) if total else 0,
+        "paragraph_borders": [{"side": s, "style": st, "size_eighths_pt": sz, "color": c, "count": n}
+                              for (s, st, sz, c), n in pb.most_common(8)],
+        "alignment_counts": dict(aligns),
+    }
 
 
 # ---------- headers / footers ----------
-def _hf(hf) -> dict:
+def _hf(hf, first_section: bool = False) -> dict:
     if hf.is_linked_to_previous:
-        return {"linked_to_previous": True}
+        # For section 0 there is nothing to inherit from: the header/footer simply doesn't exist.
+        return {"present": False} if first_section else {"linked_to_previous": True}
     el = hf._element
     instr = " ".join((t.text or "") for t in el.iter(qn("w:instrText")))
     simple = " ".join(f.get(qn("w:instr")) or "" for f in el.iter(qn("w:fldSimple")))
@@ -232,15 +325,16 @@ def _section(i: int, s) -> dict:
         | {"header": emu_to_in(s.header_distance), "footer": emu_to_in(s.footer_distance), "gutter": emu_to_in(s.gutter)},
         "columns": int(cols.get(qn("w:num"))) if cols is not None and cols.get(qn("w:num")) else 1,
         "different_first_page": bool(s.different_first_page_header_footer),
-        "header": _hf(s.header), "footer": _hf(s.footer),
-        "first_page_header": _hf(s.first_page_header) if s.different_first_page_header_footer else None,
-        "first_page_footer": _hf(s.first_page_footer) if s.different_first_page_header_footer else None,
+        "header": _hf(s.header, i == 0), "footer": _hf(s.footer, i == 0),
+        "first_page_header": _hf(s.first_page_header, i == 0) if s.different_first_page_header_footer else None,
+        "first_page_footer": _hf(s.first_page_footer, i == 0) if s.different_first_page_header_footer else None,
     }
 
 
 # ---------- main entry ----------
-def analyze_docx(path: str | Path) -> dict:
-    doc = Document(str(path))
+def analyze_docx(path) -> dict:
+    """Accepts a filesystem path or a binary file-like object."""
+    doc = Document(path if hasattr(path, "read") else str(path))
     theme = _theme(doc)
     defaults = _doc_defaults(doc, theme)
 
@@ -302,6 +396,7 @@ def analyze_docx(path: str | Path) -> dict:
         "defaults": defaults,
         "sections": sections,
         "styles_used": styles_used,
+        "formatting_census": _census(doc, defaults),
         "outline": outline,
         "body": body,
         "tables": tables,
