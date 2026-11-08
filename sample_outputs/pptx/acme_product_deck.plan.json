@@ -1,0 +1,29 @@
+{
+  "format": "pptx",
+  "summary": "Update the title slide, add a Next-steps slide, duplicate Highlights",
+  "ops": [
+    {
+      "op": "pptx.set_text",
+      "slide": 1,
+      "shape": "Title 1",
+      "text": "Annual Review FY2025"
+    },
+    {
+      "op": "pptx.replace_all",
+      "find": "FY2024",
+      "replace": "FY2025"
+    },
+    {
+      "op": "pptx.add_slide",
+      "layout": "Title and Content",
+      "texts": {
+        "0": "Next steps",
+        "1": "Launch in Q2"
+      }
+    },
+    {
+      "op": "pptx.duplicate_slide",
+      "slide": 2
+    }
+  ]
+}

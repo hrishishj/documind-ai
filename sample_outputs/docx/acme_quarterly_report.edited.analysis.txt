@@ -1,0 +1,6 @@
+DOCX. P<n> = top-level paragraph n (0-based). T<n> = table n; row/col are 0-based, col = cell position in the row.
+P0 [Heading 1] Quarterly Report - Q3 FY2024
+P1 [Normal] Intro paragraph in Georgia. Bold red run.
+P2 [Normal] Revenue grew in every region this quarter.
+P3 [Heading 2] Details
+T0: 4x3 Region | Q1 | Q2 / North | 12 | 20 / South | 15 | 25

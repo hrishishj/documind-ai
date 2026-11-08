@@ -65,6 +65,10 @@ exists that fails if the fix is removed (mutation-checked where noted).
 | 36 | Reply text | "7 change(s) applied" for a one-paragraph request (6 were the Sources lines) | Misleading summary | "1 change(s) applied, plus a Sources section." |
 | 37 | Security | Fetching result pages server-side would be an SSRF vector | Internal-network access via a hostile page | The server never fetches result URLs (Tavily supplies extracted content); asserted by a test; links are re-validated to `http(s)` in the browser and open with `noopener noreferrer` |
 | 38 | Observability | A rejected-then-retried plan left no trace of why | Hard to debug demos | Rejected plans are logged |
+| 39 | Deployment | Session cookie was `Secure` whenever `APP_ENV=production`; the Docker stack serves plain http, so a non-localhost visitor's browser would silently drop it and every request would 404 | Found by smoke-testing through the nginx proxy (not by the unit tests) | New `COOKIE_SECURE` setting (default behaviour unchanged), compose sets it false, test covers all three states |
+| 40 | Packaging | `requirements.txt` mixed dev tools with runtime and listed an unused `trafilatura` chain (136 pins) | Heavier install, dead dependency | Runtime closure (116 pins) built in a clean venv; every `app` module imported there (53/53) before accepting it; dev tools in `requirements-dev.txt` |
+| 41 | Lint claim | Earlier "ruff clean" had no committed config; with ruff 0.17 defaults it reports 131 style findings | Claim not reproducible | `backend/ruff.toml` (E9, F, B minus style-only B904/B905/B008); gate is now one command |
+| 42 | Samples | My first sample edit plans were rejected by the renderer (merged last row; placeholder keys `0`/`1`, not `idx:0`) | Showed the validators work; plans corrected | `tools/make_samples.py` regenerates all samples and fails if preservation fails |
 
 ## Probes with a clean result
 
