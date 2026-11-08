@@ -1,28 +1,132 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
+import { api, ApiError, streamChat, type FileOut, type Message, type Session, type SessionDetail } from './api'
+import { Composer, FilesPanel, MessageList, ProfileModal, Sidebar } from './components'
 
-type Health = { status: string; app: string; env: string }
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 export default function App() {
-  const [health, setHealth] = useState<Health | null>(null)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [detail, setDetail] = useState<SessionDetail | null>(null)
+  const [local, setLocal] = useState<Message[]>([]) // optimistic messages for the turn in flight
+  const [steps, setSteps] = useState<string[]>([])
+  const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [viewing, setViewing] = useState<FileOut | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const abort = useRef<AbortController | null>(null)
 
+  const loadSessions = useCallback(async () => setSessions(await api.listSessions()), [])
+  const loadDetail = useCallback(async (id: string) => setDetail(await api.getSession(id)), [])
+
+  const select = useCallback(async (id: string) => {
+    setActiveId(id); setLocal([]); setError(null)
+    try { await loadDetail(id) } catch (e) { setError(errMsg(e)) }
+  }, [loadDetail])
+
+  // Boot: open the most recent conversation, or create the first one. Guarded to run once: React StrictMode
+  // (dev) invokes effects twice, and each run would otherwise see "no sessions" and create its own.
+  const booted = useRef(false)
   useEffect(() => {
-    fetch('/api/health')
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json() as Promise<Health>
-      })
-      .then(setHealth)
-      .catch((e: Error) => setError(e.message))
-  }, [])
+    if (booted.current) return
+    booted.current = true
+    ;(async () => {
+      try {
+        let list = await api.listSessions()
+        if (!list.length) list = [await api.createSession()]
+        setSessions(list)
+        await select(list[0].id)
+      } catch (e) { setError(errMsg(e)) }
+    })()
+  }, [select])
+
+  const newChat = async () => {
+    try {
+      const s = await api.createSession()
+      await loadSessions()
+      await select(s.id)
+    } catch (e) { setError(errMsg(e)) }
+  }
+
+  const removeChat = async (id: string) => {
+    if (!window.confirm('Delete this conversation and its files?')) return
+    try {
+      await api.deleteSession(id)
+      const list = await api.listSessions()
+      if (!list.length) list.push(await api.createSession())
+      setSessions(list)
+      if (id === activeId) await select(list[0].id)
+    } catch (e) { setError(errMsg(e)) }
+  }
+
+  const send = async (text: string) => {
+    if (!activeId || busy) return
+    const id = activeId
+    setError(null); setBusy(true); setSteps([])
+    setLocal([{ id: 'local-user', role: 'user', content: text, meta: {}, created_at: new Date().toISOString() }])
+    abort.current = new AbortController()
+    try {
+      await streamChat(id, text, (e) => {
+        if (e.type === 'node') setSteps((s) => (s[s.length - 1] === e.label ? s : [...s, e.label]))
+        else if (e.type === 'error') setError(e.message)
+      }, abort.current.signal)
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') setError(errMsg(e))
+    } finally {
+      setBusy(false); setSteps([]); setLocal([])
+      abort.current = null
+      try { await Promise.all([loadDetail(id), loadSessions()]) } catch (e) { setError(errMsg(e)) }
+    }
+  }
+
+  const upload = async (files: File[]) => {
+    if (!activeId) return
+    const id = activeId
+    for (const f of files) {
+      setUploading((u) => [...u, f.name])
+      try {
+        await api.upload(id, f)
+        const fresh = await api.getSession(id)
+        // set both in one synchronous block so React batches them: otherwise the finished file and its
+        // "Uploading…" placeholder are briefly on screen together
+        setDetail(fresh)
+        setUploading((u) => u.filter((n) => n !== f.name))
+      } catch (e) {
+        setError(`${f.name}: ${errMsg(e)}`)
+        setUploading((u) => u.filter((n) => n !== f.name))
+      }
+    }
+  }
+
+  const messages = [...(detail?.messages ?? []), ...local]
 
   return (
-    <main style={{ padding: 24 }}>
-      <h1>DocuMind AI</h1>
-      {health && <p data-testid="status">Backend: {health.status} ({health.env})</p>}
-      {error && <p data-testid="status">Backend unreachable: {error}</p>}
-      {!health && !error && <p>Connecting…</p>}
-    </main>
+    <div className="app"
+         onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragging(true) } }}
+         onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false) }}
+         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = Array.from(e.dataTransfer.files); if (f.length) upload(f) }}>
+      <Sidebar sessions={sessions} activeId={activeId} onSelect={select} onNew={newChat} onDelete={removeChat} disabled={busy} />
+      <main className="main">
+        {error && (
+          <div className="banner error" role="alert">
+            <span>{error}</span>
+            <button className="icon-btn" aria-label="Dismiss" onClick={() => setError(null)}>×</button>
+          </div>
+        )}
+        {activeId && detail
+          ? <MessageList sessionId={activeId} messages={messages} steps={steps} busy={busy} />
+          : <div className="messages"><div className="empty"><p>Connecting…</p></div></div>}
+        <Composer busy={busy} onSend={send} onFiles={upload} onStop={() => abort.current?.abort()} />
+        {dragging && <div className="drop-overlay">Drop files to attach (DOCX, PPTX, XLSX, PDF, TXT)</div>}
+      </main>
+      {activeId && detail && (
+        <FilesPanel sessionId={activeId} files={detail.files} artifacts={detail.artifacts} uploading={uploading} onAnalysis={setViewing} />
+      )}
+      {viewing && activeId && <ProfileModal sessionId={activeId} file={viewing} onClose={() => setViewing(null)} />}
+    </div>
   )
 }
+
+export { ApiError }
