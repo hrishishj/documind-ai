@@ -27,8 +27,11 @@ from app.document_engine.planner_view import build_planner_view
 from app.document_engine.xlsx.analyzer import analyze_spreadsheet
 from app.llm.provider import LLM, StructuredOutputError
 from app.rag.answer import (NOT_FOUND, QA_SYSTEM, TOP_K, GroundedAnswer, attribute_sources, evidence_snippet, format_sources,
-                            normalize_text, relevant, verify_citations)
+                            normalize_text, relevant, verify_citations, web_to_sources)
 from app.rag.retrieve import Indexer
+from app.research.search import WebSearch, clean_text
+from app.research.sources_ops import sources_ops
+from app.research.triggers import wants_web
 from app.services.storage import LocalStorage
 from app.workflows.state import ChatState
 
@@ -72,6 +75,7 @@ class Deps:
     storage: LocalStorage
     profiles: LRUCache = field(default_factory=LRUCache)  # sha256 of file -> analysis profile (bounded cache)
     retriever: Indexer | None = None                       # document search; None disables grounded answers
+    web: WebSearch | None = None                           # web research; None disables it
 
 
 def _file_hash(p: Path) -> str:
@@ -94,10 +98,25 @@ def build_graph(deps: Deps, checkpointer=None):
         # stale `response`/`plan` from the last message would otherwise be mistaken for this turn's.
         update = {"intent": decision.intent, "target": target, "route_reason": decision.reason, "attempts": 0,
                   "plan_errors": [], "plan": None, "artifact": None, "render": None, "error": None, "citations": [],
-                  "response": "", "declined": False, "profile_summary": ""}
+                  "response": "", "declined": False, "profile_summary": "", "web_sources": [], "web_note": "", "sources_ops": 0}
+        docs_ready = any(f.get("kind") == "upload" and f.get("index_status") == "ready" for f in state.get("files", []))
+        update["needs_web"] = bool(deps.web is not None and decision.intent in ("chat", "edit")
+                                   and wants_web(state["user_message"], docs_ready))
         if decision.intent == "clarify":
             update["response"] = decision.clarification or "Could you tell me which document you mean?"
         return update
+
+    def research_node(state: ChatState) -> dict:
+        """Search the web for the user's request. A failure never aborts the turn: it is reported and the turn continues."""
+        try:
+            results = deps.web.search(state["user_message"], max_results=5)
+        except Exception as e:  # noqa: BLE001 - quota, network, all engines empty ...
+            log.warning("web research failed: %s", str(e)[:200])
+            return {"web_sources": [], "web_note": f"Web search was unavailable ({clean_text(str(e), 120)})"}
+        if not results:
+            return {"web_sources": [], "web_note": "The web search returned no usable results"}
+        return {"web_sources": [{"title": r.title, "url": r.url, "domain": r.domain, "text": r.text, "score": r.score} for r in results],
+                "web_note": ""}
 
     def _profile_for(ref) -> dict:
         path = deps.storage.resolve(ref["path"])
@@ -154,16 +173,22 @@ def build_graph(deps: Deps, checkpointer=None):
                         "notice": "I couldn't tie this answer to a specific passage in your documents, so please treat it with care."}
         return {"response": text, "citations": [
             {"n": s.n, "file_id": s.file_id, "file_name": s.file_name, "locator": s.locator, "title": s.title,
-             "snippet": evidence_snippet(s.text, text, state["user_message"]), "score": s.score} for s in cited]}
+             "snippet": evidence_snippet(s.text, text, state["user_message"]), "score": s.score, "url": s.url, "kind": s.kind}
+            for s in cited]}
 
     def chat_node(state: ChatState) -> dict:
-        sources, pending = _retrieve(state)
+        doc_sources, pending = _retrieve(state)
+        web = web_to_sources(state.get("web_sources") or [], start=len(doc_sources) + 1)  # numbered after the documents
+        sources = doc_sources + web
+        web_note = state.get("web_note") or ""
         if sources:
             res = _grounded(state, sources)
             if res is not None:
                 note = res.pop("notice", None)
                 if note:
                     res["response"] += f"\n\n_{note}_"
+                if web_note:
+                    res["response"] += f"\n\n_{web_note}; this answer uses your documents only._"
                 return res
         files = state.get("files", [])
         editable = [f for f in files if f["format"] in ("docx", "pptx", "xlsx")]
@@ -183,6 +208,8 @@ def build_graph(deps: Deps, checkpointer=None):
         if pending:
             text += (f"\n\n_{pending} file(s) are still being indexed for search, so I may not be able to answer from "
                      "them yet. Ask again in a moment._")
+        if web_note:  # the user asked for the web and it failed: say so rather than answer from memory as if searched
+            text += f"\n\n_{web_note}, so this reply is not based on a web search._"
         return {"response": text, "citations": []}
 
     def understand_node(state: ChatState) -> dict:
@@ -196,9 +223,11 @@ def build_graph(deps: Deps, checkpointer=None):
     def plan_node(state: ChatState) -> dict:
         target = state["target"]
         n = state.get("attempts", 0) + 1
+        web = state.get("web_sources") or []
+        src_block = "\n\n".join(f"[{i}] {w['title']} ({w['url']})\n{w['text'][:700]}" for i, w in enumerate(web, 1))
         try:
             plan = make_plan(deps.llm, detect_format(target["path"]), state["profile_summary"], state["user_message"],
-                             state.get("history", []), state.get("plan_errors") or None)
+                             state.get("history", []), state.get("plan_errors") or None, sources=src_block)
         except ValidationError as e:  # the model produced something the strict schema rejects
             msgs = [f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}" for err in e.errors()[:6]]
             return {"attempts": n, "plan": None, "plan_errors": ["schema violation: " + "; ".join(msgs)]}
@@ -207,7 +236,23 @@ def build_graph(deps: Deps, checkpointer=None):
         except ExternalServiceError as e:
             return {"attempts": MAX_ATTEMPTS, "plan": None, "error": e.message,
                     "plan_errors": [e.message]}
-        return {"attempts": n, "plan": plan.model_dump(mode="json"), "plan_errors": []}
+        out = plan.model_dump(mode="json")
+        update: dict = {"attempts": n, "plan": out, "plan_errors": []}
+        if web and plan.ops:
+            # The model is not trusted to remember its citations: a Sources section is appended deterministically.
+            fmt = detect_format(target["path"])
+            extra, note = sources_ops(fmt, _profile_for(target), web, out["ops"])
+            if extra:
+                problems = validate_plan(deps.storage.resolve(target["path"]), EditPlan.model_validate({"format": fmt, "ops": extra}))
+                if problems:  # our own addition must never make the user's edit fail
+                    log.warning("sources section skipped: %s", problems[:1])
+                    extra, note = [], "a Sources section could not be added to the file"
+            if extra:
+                out["ops"] = [*out["ops"], *extra]
+                update["sources_ops"] = len(extra)
+            elif note:
+                update["web_note"] = f"No Sources section was added to the file ({note})"
+        return update
 
     def validate_node(state: ChatState) -> dict:
         if state.get("error"):
@@ -219,6 +264,8 @@ def build_graph(deps: Deps, checkpointer=None):
             return {"plan_errors": [], "declined": True,
                     "response": plan.summary or "I couldn't find a way to make that change."}
         errs = validate_plan(deps.storage.resolve(state["target"]["path"]), plan)
+        if errs:  # visible in the server log: otherwise a retried turn gives no hint why the first plan was rejected
+            log.info("plan rejected (attempt %s, %d error(s)): %s", state.get("attempts"), len(errs), " | ".join(errs[:3]))
         return {"plan_errors": errs}
 
     def render_node(state: ChatState) -> dict:
@@ -246,12 +293,22 @@ def build_graph(deps: Deps, checkpointer=None):
         lines = [f"Done. I created **{art['name']}** (version {art['version']}) from *{state['target']['name']}*."]
         if plan.get("summary"):
             lines.append(plan["summary"])
-        lines.append(f"{rep['applied']} change(s) applied.")
+        extra = state.get("sources_ops") or 0  # our appended Sources lines are not "changes the user asked for"
+        lines.append(f"{rep['applied'] - extra} change(s) applied" + (", plus a Sources section." if extra else "."))
         lines.append("The original layout and formatting were preserved." if rep["preserved"] else
                      "**Warning:** my check found differences from the original design: " + "; ".join(rep["violations"]))
         if rep["warnings"]:
             lines.append("Notes: " + " ".join(rep["warnings"]))
-        return {"response": "\n\n".join(lines)}
+        web = state.get("web_sources") or []
+        citations = []
+        if web:
+            lines.append("**Web sources consulted:**\n" + "\n".join(f"- [{i}] {w['title']} ({w['url']})" for i, w in enumerate(web, 1)))
+            citations = [{"n": i, "file_id": "", "file_name": w["domain"], "locator": w["domain"], "title": w["title"],
+                          "snippet": clean_text(w["text"], 320), "score": w.get("score", 0), "url": w["url"], "kind": "web"}
+                         for i, w in enumerate(web, 1)]
+        if state.get("web_note"):
+            lines.append(f"_{state['web_note']}._")
+        return {"response": "\n\n".join(lines), "citations": citations}
 
     def give_up_node(state: ChatState) -> dict:
         errs = state.get("plan_errors") or ["unknown problem"]
@@ -263,7 +320,13 @@ def build_graph(deps: Deps, checkpointer=None):
 
     # ------------------------------------------------------------------ routing
     def after_route(state: ChatState) -> str:
-        return {"edit": "understand", "chat": "chat"}.get(state.get("intent", ""), END)
+        intent = state.get("intent", "")
+        if intent in ("edit", "chat") and state.get("needs_web"):
+            return "research"  # only entered when the web is actually wanted, so the progress label is always truthful
+        return {"edit": "understand", "chat": "chat"}.get(intent, END)
+
+    def after_research(state: ChatState) -> str:
+        return "understand" if state.get("intent") == "edit" else "chat"
 
     def after_validate(state: ChatState) -> str:
         if state.get("declined"):
@@ -279,11 +342,12 @@ def build_graph(deps: Deps, checkpointer=None):
             "give_up" if state.get("plan_errors") else "respond")
 
     g = StateGraph(ChatState)
-    for name, fn in (("route", route_node), ("chat", chat_node), ("understand", understand_node), ("plan", plan_node),
+    for name, fn in (("route", route_node), ("research", research_node), ("chat", chat_node), ("understand", understand_node), ("plan", plan_node),
                      ("validate", validate_node), ("render", render_node), ("respond", respond_node), ("give_up", give_up_node)):
         g.add_node(name, fn)
     g.add_edge(START, "route")
-    g.add_conditional_edges("route", after_route, {"understand": "understand", "chat": "chat", END: END})
+    g.add_conditional_edges("route", after_route, {"understand": "understand", "chat": "chat", "research": "research", END: END})
+    g.add_conditional_edges("research", after_research, {"understand": "understand", "chat": "chat"})
     g.add_edge("chat", END)
     g.add_edge("understand", "plan")
     g.add_edge("plan", "validate")

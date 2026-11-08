@@ -36,6 +36,13 @@ class DocxInsertParagraph(_Op):
     like: int | None = Field(default=None, ge=0)
 
 
+class DocxAppendParagraph(_Op):
+    """Append a paragraph at the very END of the document (after any trailing table), cloning the formatting of `like`."""
+    op: Literal["docx.append_paragraph"]
+    text: str
+    like: int = Field(ge=0)
+
+
 class DocxDeleteParagraph(_Op):
     op: Literal["docx.delete_paragraph"]
     paragraph: int = Field(ge=0)
@@ -146,8 +153,8 @@ class XlsxCopySheet(_Op):
     new_name: str = Field(min_length=1, max_length=31)
 
 
-DocxOp = Annotated[Union[DocxReplaceText, DocxReplaceAll, DocxInsertParagraph, DocxDeleteParagraph, DocxSetCell,
-                         DocxAddRow, DocxDeleteRow], Field(discriminator="op")]
+DocxOp = Annotated[Union[DocxReplaceText, DocxReplaceAll, DocxInsertParagraph, DocxAppendParagraph, DocxDeleteParagraph,
+                         DocxSetCell, DocxAddRow, DocxDeleteRow], Field(discriminator="op")]
 PptxOp = Annotated[Union[PptxSetText, PptxReplaceAll, PptxAddSlide, PptxDuplicateSlide, PptxDeleteSlide,
                          PptxMoveSlide, PptxSetCell], Field(discriminator="op")]
 XlsxOp = Annotated[Union[XlsxSetCell, XlsxSetRange, XlsxAppendRow, XlsxCopySheet], Field(discriminator="op")]

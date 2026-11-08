@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, type ArtifactOut, type Citation, type FileOut, type Message, type Session } from './api'
 import { RichText } from './RichText'
-import { ACCEPT, fmtSize } from './utils'
+import { ACCEPT, fmtSize, safeHref } from './utils'
 
 // ------------------------------------------------------------------ sidebar
 export function Sidebar(props: {
@@ -64,11 +64,18 @@ function SourceList({ msgId, citations, active, onToggle }: {
       <ol>
         {citations.map((c) => (
           <li key={c.ref} id={`src-${msgId}-${c.ref}`} className={active === c.ref ? 'active' : ''}>
-            <button type="button" className="src-btn" aria-expanded={active === c.ref} onClick={() => onToggle(c.ref)}>
-              <span className="cite static">{c.ref}</span>
-              <strong>{c.title}</strong>
-              {c.locator && <span className="muted">{c.locator}</span>}
-            </button>
+            <div className="src-row">
+              <button type="button" className="src-btn" aria-expanded={active === c.ref} onClick={() => onToggle(c.ref)}>
+                <span className="cite static">{c.ref}</span>
+                {c.source_type === 'web' && <span className="web-badge">WEB</span>}
+                <strong>{c.title}</strong>
+                {c.locator && <span className="muted">{c.locator}</span>}
+              </button>
+              {c.source_type === 'web' && safeHref(c.url) && (
+                <a className="open-link" href={safeHref(c.url)!} target="_blank" rel="noopener noreferrer"
+                   aria-label={`Open ${c.title} in a new tab`}>Open ↗</a>
+              )}
+            </div>
             {active === c.ref && <blockquote>{c.snippet}</blockquote>}
           </li>
         ))}

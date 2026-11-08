@@ -85,8 +85,10 @@ def set_index_status(db: Session, file_id: str, status: str, error: str = "", co
 
 def add_citations(db: Session, message_id: str, citations: list[dict]) -> None:
     for c in citations:
-        db.add(Citation(message_id=message_id, ref=c["n"], source_type="document", title=c["file_name"],
-                        file_id=c["file_id"] if db.get(UploadedFile, c["file_id"]) else None,
+        web = c.get("kind") == "web"
+        db.add(Citation(message_id=message_id, ref=c["n"], source_type="web" if web else "document",
+                        title=(c["title"] if web else c["file_name"])[:500], url=(c.get("url") or None) if web else None,
+                        file_id=None if web else (c["file_id"] if db.get(UploadedFile, c["file_id"]) else None),
                         locator=c["locator"], snippet=c["snippet"]))
     db.commit()
 

@@ -22,6 +22,11 @@ class ChatState(TypedDict, total=False):
     intent: str                         # chat | edit | clarify
     target: FileRef | None
     route_reason: str
+    # web research
+    needs_web: bool
+    web_sources: list[dict]             # [{title, url, domain, text, score}] from the search engine
+    web_note: str                       # why web research was unavailable, if it was requested but failed
+    sources_ops: int                    # how many plan operations were appended automatically for the Sources section
     # editing loop
     profile_summary: str
     plan: dict | None

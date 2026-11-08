@@ -10,9 +10,9 @@ from app.workflows.graph import LRUCache
 from tests.test_api import GOOD, FakeLLM, docx_plan, new_session, sse, upload
 
 
-def app_for(test_database, tmp_path, llm=None, indexer=None, **over):
+def app_for(test_database, tmp_path, llm=None, indexer=None, web=None, **over):
     return create_app(Settings(storage_dir=tmp_path / "store", groq_api_key="", **over), llm=llm,
-                      checkpointer=MemorySaver(), database=test_database, indexer=indexer)
+                      checkpointer=MemorySaver(), database=test_database, indexer=indexer, web=web)
 
 
 @pytest.fixture()

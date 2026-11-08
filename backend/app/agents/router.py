@@ -28,6 +28,8 @@ def describe_files(files: list[FileRef]) -> str:
 EDIT_VERB = re.compile(
     r"\b(change|edit|update|replace|rewrite|rename|add|insert|append|remove|delete|drop|duplicate|copy|move|reorder|"
     r"fill|translate|shorten|lengthen|reword|fix|correct|set|swap|merge|split|create|generate|make|turn|convert|apply|"
+    r"re-?title|re-?phrase|re-?write|re-?format|re-?order|re-?arrange|re-?style|revise|expand|condense|tweak|polish|proofread|"
+    r"edit|modify|adjust|amend|extend|trim|cut|bold|highlight|insert|put|include|append|"
     r"should (be|say|read|show)|instead of|needs? to (be|say|read)|must (be|say|read)|ought to be)\b", re.I)
 QUESTION = re.compile(r"^\s*(what|why|how|when|where|who|which|can you explain|could you explain|explain|summari[sz]e|describe|"
                       r"tell me|list|show me|is |are |does |do )", re.I)

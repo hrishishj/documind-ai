@@ -136,6 +136,20 @@ def _resolve(ctx: _Ctx, op, errs: list[str]):
             ctx.last_inserted.get(anchor, anchor).addnext(new)
             ctx.last_inserted[anchor] = new
         return do
+    if k == "docx.append_paragraph":
+        like = ctx.para(op.like, errs, "like")
+        if like is None:
+            return None
+
+        def do():
+            new = copy.deepcopy(like)
+            for bad in list(new.iter(qn("w:sectPr"), qn("w:bookmarkStart"), qn("w:bookmarkEnd"))):
+                bad.getparent().remove(bad)
+            set_paragraph_text(new, op.text)
+            body = ctx.doc.element.body
+            sect = body.find(qn("w:sectPr"))  # the body's final section properties must stay last
+            (sect.addprevious(new) if sect is not None else body.append(new))
+        return do
     if k == "docx.replace_all":
         def do():
             n = 0
