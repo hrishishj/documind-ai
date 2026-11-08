@@ -1,3 +1,5 @@
+# Top-level RUNTIME dependencies (what the application needs to run).
+# requirements.txt is the pinned closure of this file; requirements-dev.txt adds test/lint/browser tooling.
 fastapi
 uvicorn[standard]
 python-multipart
@@ -15,15 +17,10 @@ pinecone
 tavily-python
 ddgs
 httpx
-trafilatura
 python-docx
 python-pptx
 openpyxl
 lxml
 pillow
-pytest
 xlrd
 pymupdf
-playwright
-ruff
-pytest-cov
