@@ -1,0 +1,48 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+ENV/
+
+# Node.js
+node_modules/
+dist/
+build/
+coverage/
+
+# Generated documents and temporary storage
+backend/storage/*
+!backend/storage/.gitkeep
+
+sample_outputs/*
+!sample_outputs/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Test and coverage artifacts
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+*.sqlite3
