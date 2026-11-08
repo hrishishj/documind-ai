@@ -236,6 +236,22 @@ def test_analysis_is_cached_by_content_hash(env):
     assert len(deps.profiles) == 1
 
 
+def test_state_from_the_previous_turn_never_leaks_into_the_next(env):
+    """Regression: with a persistent thread, a stale `response` made turn 2 look like 'the model declined'."""
+    f = upload(env, build_docx, "docx", "report.docx")
+    cp = MemorySaver()
+    llm = FakeLLM(plans=[docx_plan(GOOD), docx_plan({"op": "docx.replace_text", "paragraph": 1, "text": "Second"})],
+                  texts=["A chat answer."])
+    deps = Deps(llm, env)
+    t1 = run(deps, [f], "Change the title", cp=cp, thread="s")
+    art = {"id": t1["artifact"]["id"], "name": t1["artifact"]["name"], "path": t1["artifact"]["path"],
+           "format": "docx", "kind": "artifact", "version": 1}
+    t2 = run(deps, [f, art], "Now make the intro say Second", cp=cp, thread="s")
+    assert t2["artifact"] is not None and t2["artifact"]["version"] == 2 and not t2.get("declined")
+    t3 = run(deps, [f, art], "Hello there", cp=cp, thread="s")  # a chat turn after edits carries no artifact/plan
+    assert t3["response"] == "A chat answer." and t3["artifact"] is None and t3["plan"] is None
+
+
 def test_checkpointed_graph_runs_under_a_thread_id(env):
     f = upload(env, build_docx, "docx", "report.docx")
     cp = MemorySaver()

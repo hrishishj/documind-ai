@@ -26,6 +26,7 @@ class ChatState(TypedDict, total=False):
     plan: dict | None
     plan_errors: list[str]
     attempts: int
+    declined: bool                      # the model returned no operations and explained why (response holds the text)
     # outputs
     artifact: dict | None               # {id, name, format, version, path, from_file}
     render: dict | None                 # {applied, warnings, preserved, violations}
