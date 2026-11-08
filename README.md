@@ -84,7 +84,7 @@ Without a Groq key the app still starts but chat is disabled; without a Pinecone
 
 * `sample_templates/` - our own demo templates (`acme_*`), plus a public SEC filing converted to docx/xls and an investor-deck PDF used for Q&A.
 * `sample_outputs/` - for each demo template: the analysis, the **Edit Plan JSON**, the edited file, and the analysis of the edited file. Open the template and the `.edited` file side by side to compare.
-* Regenerate everything deterministically (no LLM, no network): `python -X utf8 -I backend/tools/make_samples.py`.
+* Regenerate everything (no LLM, no network; analyses and plans are identical every run, the binary files differ only by zip timestamps): `python -X utf8 -I backend/tools/make_samples.py`.
 
 ## Tests and quality gates
 
@@ -98,7 +98,7 @@ cd ../frontend
 npx vitest run && npm run lint && npm run build
 ```
 
-Tests never call Groq, Pinecone, Tavily or the real embedder. Live end-to-end checks that do are in `backend/tools/`
+The default test run never calls Groq or the real embedder. A few tests hit live Pinecone/Tavily and skip themselves when no key is configured (a fresh clone without `.env` runs 367 passed / 11 skipped). Live end-to-end checks are in `backend/tools/`
 (`e2e_live.py`, `rag_e2e.py`, `web_e2e.py`, `ui_e2e.py`); they need real keys.
 
 ## Security notes

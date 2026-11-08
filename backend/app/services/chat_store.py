@@ -76,11 +76,14 @@ def save_profile(db: Session, file_id: str, profile: dict) -> None:
     db.commit()
 
 
-def set_index_status(db: Session, file_id: str, status: str, error: str = "", count: int = 0) -> None:
+def set_index_status(db: Session, file_id: str, status: str, error: str = "", count: int = 0) -> bool:
+    """Returns False when the file no longer exists (its conversation was deleted while indexing ran)."""
     f = db.get(UploadedFile, file_id)
-    if f is not None:  # the file may have been deleted with its conversation while indexing was running
-        f.index_status, f.index_error, f.chunk_count = status, error[:500], count
-        db.commit()
+    if f is None:
+        return False
+    f.index_status, f.index_error, f.chunk_count = status, error[:500], count
+    db.commit()
+    return True
 
 
 def add_citations(db: Session, message_id: str, citations: list[dict]) -> None:
