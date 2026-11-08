@@ -1,10 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { Composer, MessageList } from './components'
+import { Composer, FilesPanel, MessageList } from './components'
 import { fmtSize } from './utils'
 import { RichText } from './RichText'
-import type { Message } from './api'
+import type { Citation, Message } from './api'
 
 const msg = (over: Partial<Message>): Message => ({ id: 'm', role: 'assistant', content: '', meta: {}, created_at: '', ...over })
 
@@ -39,6 +39,82 @@ describe('RichText', () => {
   ])('never loses characters unintentionally: %s', (input, visible) => {
     const { container } = render(<RichText text={input} />)
     expect(container.textContent).toBe(visible)
+  })
+})
+
+const cite = (ref: number, over = {}): Citation => ({
+  ref, source_type: 'document', title: 'annual.docx', locator: '¶12-14', snippet: 'Total revenue was 331,839 million.',
+  file_id: 'f1', url: null, ...over,
+})
+
+describe('citations', () => {
+  it('renders known [n] markers as chips and leaves unknown ones as plain text', async () => {
+    const onCite = vi.fn()
+    const { container } = render(<RichText text="Revenue was 331,839 [1]. Odd claim [4]." citations={[cite(1)]} onCite={onCite} />)
+    const chips = container.querySelectorAll('button.cite')
+    expect(chips).toHaveLength(1)
+    expect(chips[0]).toHaveAccessibleName('Source 1: annual.docx, ¶12-14')
+    expect(container.textContent).toContain('[4]')  // never a link to a source that does not exist
+    await userEvent.click(chips[0])
+    expect(onCite).toHaveBeenCalledWith(1)
+  })
+
+  it('shows a Sources list under the answer and reveals the quoted passage on demand', async () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]}
+      messages={[msg({ id: 'a1', content: 'Revenue was 331,839 [1] and R&D 35,562 [2].', citations: [cite(1), cite(2, { locator: 'Sheet \'x\' row 5', snippet: 'R&D | 35562' })] })]} />)
+    const sources = screen.getByLabelText('Sources')
+    expect(within(sources).getByText('¶12-14')).toBeInTheDocument()
+    expect(within(sources).getByText("Sheet 'x' row 5")).toBeInTheDocument()
+    expect(screen.queryByText('R&D | 35562')).toBeNull()                    // collapsed by default
+    await userEvent.click(within(sources).getByRole('button', { name: /Sheet 'x' row 5/ }))
+    expect(screen.getByText('R&D | 35562')).toBeInTheDocument()
+    await userEvent.click(within(sources).getByRole('button', { name: /Sheet 'x' row 5/ }))
+    expect(screen.queryByText('R&D | 35562')).toBeNull()                    // toggles closed again
+  })
+
+  it('clicking an inline chip opens that source', async () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]}
+      messages={[msg({ id: 'a1', content: 'Revenue was 331,839 [1].', citations: [cite(1)] })]} />)
+    await userEvent.click(screen.getByRole('button', { name: /^Source 1:/ }))
+    expect(screen.getByText('Total revenue was 331,839 million.', { selector: 'blockquote' })).toBeInTheDocument()
+  })
+
+  it('keeps each message\'s open source independent', async () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]} messages={[
+      msg({ id: 'a1', content: 'One [1].', citations: [cite(1, { snippet: 'first passage' })] }),
+      msg({ id: 'a2', content: 'Two [1].', citations: [cite(1, { snippet: 'second passage' })] })]} />)
+    await userEvent.click(screen.getAllByRole('button', { name: /^Source 1:/ })[0])
+    expect(screen.getByText('first passage', { selector: 'blockquote' })).toBeInTheDocument()
+    expect(screen.queryByText('second passage', { selector: 'blockquote' })).toBeNull()
+  })
+
+  it('has no Sources section when there are no citations', () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]} messages={[msg({ content: 'Hello' })]} />)
+    expect(screen.queryByLabelText('Sources')).toBeNull()
+  })
+})
+
+describe('index status badges', () => {
+  const file = (over = {}) => ({ id: 'f', original_name: 'a.docx', kind: 'docx', size_bytes: 10, created_at: '', index_status: 'ready' as const, chunk_count: 3, index_error: '', ...over })
+  const panel = (f: ReturnType<typeof file>) => render(<FilesPanel sessionId="s" files={[f]} artifacts={[]} uploading={[]} onAnalysis={() => {}} />)
+
+  it('says when a file is being prepared, ready (with count) or not searchable (with the reason)', () => {
+    const { unmount } = panel(file({ index_status: 'indexing' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Preparing for search')
+    unmount()
+    const r2 = panel(file({ chunk_count: 1 }))
+    expect(screen.getByText('Searchable · 1 passage')).toBeInTheDocument()
+    r2.unmount()
+    const r3 = panel(file({ chunk_count: 42 }))
+    expect(screen.getByText('Searchable · 42 passages')).toBeInTheDocument()
+    r3.unmount()
+    panel(file({ index_status: 'failed', index_error: 'No searchable text was found (is this a scanned image?)', chunk_count: 0 }))
+    expect(screen.getByText(/Not searchable: No searchable text/)).toBeInTheDocument()
+  })
+
+  it('shows nothing for files that skip indexing', () => {
+    panel(file({ index_status: 'skipped' }))
+    expect(screen.queryByText(/search/i)).toBeNull()
   })
 })
 

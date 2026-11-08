@@ -23,7 +23,20 @@ class FileOut(_Out):
     original_name: str
     kind: str
     size_bytes: int
+    index_status: str
+    chunk_count: int
+    index_error: str
     created_at: datetime
+
+
+class CitationOut(_Out):
+    ref: int
+    source_type: str
+    title: str          # file name
+    locator: str | None
+    snippet: str
+    file_id: str | None
+    url: str | None
 
 
 class VersionOut(_Out):
@@ -44,6 +57,7 @@ class MessageOut(_Out):
     role: str
     content: str
     meta: dict
+    citations: list[CitationOut] = []
     created_at: datetime
 
 

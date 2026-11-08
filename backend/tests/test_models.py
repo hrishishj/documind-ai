@@ -6,13 +6,13 @@ from sqlalchemy.orm import Session
 from app.database.models import (
     Artifact, ArtifactVersion, ChatSession, Citation, Message, TemplateProfile, UploadedFile,
 )
-from app.database.session import get_engine
 
 
 @pytest.fixture
-def db():
-    """Real Postgres session; everything is rolled back after each test."""
-    conn = get_engine().connect()
+def db(test_database):
+    """Session on the ISOLATED test database (never the dev one: these tests assert global row counts, which a running
+    app would otherwise break); everything is rolled back after each test."""
+    conn = test_database.engine.connect()
     trans = conn.begin()
     s = Session(bind=conn, join_transaction_mode="create_savepoint")
     yield s
@@ -28,8 +28,8 @@ def _file(session_id):
     )
 
 
-def test_jsonb_columns_are_real_jsonb():
-    cols = {c["name"]: str(c["type"]) for c in inspect(get_engine()).get_columns("template_profiles")}
+def test_jsonb_columns_are_real_jsonb(test_database):
+    cols = {c["name"]: str(c["type"]) for c in inspect(test_database.engine).get_columns("template_profiles")}
     assert cols["profile"] == "JSONB"
 
 
@@ -43,11 +43,12 @@ def test_profile_json_round_trip(db):
     db.add(TemplateProfile(file_id=f.id, profile=payload))
     db.flush()
     db.expire_all()
-    assert db.scalar(select(TemplateProfile.profile)) == payload
+    # scoped to THIS file: other tests commit rows to the same database, so "the first row" would be arbitrary
+    assert db.scalar(select(TemplateProfile.profile).where(TemplateProfile.file_id == f.id)) == payload
 
 
 def test_cascade_delete_session_removes_children(db):
-    cs = ChatSession()
+    cs = ChatSession(owner="o")
     m = Message(role="user", content="hi")
     m.citations.append(Citation(source_type="web", url="https://example.com"))
     cs.messages.append(m)
@@ -56,10 +57,12 @@ def test_cascade_delete_session_removes_children(db):
     cs.artifacts.append(a)
     db.add(cs)
     db.flush()
+    mine = {Message: m.id, Citation: m.citations[0].id, Artifact: a.id, ArtifactVersion: a.versions[0].id}
+    count = lambda model: db.scalar(select(func.count()).select_from(model).where(model.id == mine[model]))  # noqa: E731
+    assert all(count(model) == 1 for model in mine)   # they exist first, so the zero below is meaningful
     db.delete(cs)
     db.flush()
-    for model in (Message, Citation, Artifact, ArtifactVersion):
-        assert db.scalar(select(func.count()).select_from(model)) == 0
+    assert all(count(model) == 0 for model in mine)   # and the cascade removed exactly those rows
 
 
 def test_duplicate_artifact_version_rejected(db):

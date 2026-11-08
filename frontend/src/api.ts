@@ -1,13 +1,24 @@
 import { parseSSE } from './sse'
 
 export type Session = { id: string; title: string; created_at: string; updated_at: string }
-export type FileOut = { id: string; original_name: string; kind: string; size_bytes: number; created_at: string }
+export type IndexStatus = 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped'
+export type FileOut = {
+  id: string; original_name: string; kind: string; size_bytes: number; created_at: string
+  index_status: IndexStatus; chunk_count: number; index_error: string
+}
+export type Citation = {
+  ref: number; source_type: 'document' | 'web'; title: string; locator: string | null; snippet: string
+  file_id: string | null; url: string | null
+}
 export type VersionOut = { version: number; summary: string; created_at: string }
 export type ArtifactOut = { id: string; name: string; kind: string; versions: VersionOut[] }
 export type RenderInfo = { applied: number; warnings: string[]; preserved: boolean; violations: string[] }
 export type ArtifactRef = { id: string; name: string; format: string; version: number }
 export type MessageMeta = { artifact?: ArtifactRef; render?: RenderInfo }
-export type Message = { id: string; role: 'user' | 'assistant' | 'system'; content: string; meta: MessageMeta; created_at: string }
+export type Message = {
+  id: string; role: 'user' | 'assistant' | 'system'; content: string; meta: MessageMeta; created_at: string
+  citations?: Citation[]
+}
 export type SessionDetail = Session & { messages: Message[]; files: FileOut[]; artifacts: ArtifactOut[] }
 export type Analysis = Record<string, unknown> & { format: string; counts: Record<string, number>; warnings: string[] }
 export type UploadOut = { file: FileOut; analysis: Analysis | null }

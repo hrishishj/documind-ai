@@ -94,6 +94,50 @@ def test_unparseable_structured_output_raises_a_retryable_error():
     assert issubclass(StructuredOutputError, ExternalServiceError)
 
 
+def test_tool_use_failed_is_a_format_problem_not_an_outage(monkeypatch):
+    """Groq 400 'Tool choice is required, but model did not call a tool' must not be reported as 'unreachable'."""
+    from app.llm.provider import StructuredOutputError
+    monkeypatch.setattr("app.llm.provider.time.sleep", lambda s: None)
+    llm = GroqLLM.__new__(GroqLLM)
+    llm.retries, llm.governor, llm._messages = 3, TokenGovernor(limit=10**9), GroqLLM._messages
+    n = {"c": 0}
+
+    class R:
+        def invoke(self, m):
+            n["c"] += 1
+            raise Err("Error code: 400 - {'error': {'message': 'Tool choice is required, but model did not call a tool', "
+                      "'code': 'tool_use_failed'}}")
+    with pytest.raises(StructuredOutputError):
+        llm._call(lambda: R(), "s", "u", None, 50)
+    assert n["c"] == 1  # a content problem is not retried blindly at the HTTP level; the caller retries with feedback
+
+
+def test_structured_calls_carry_history_as_text_never_as_assistant_turns():
+    """Regression: a prior assistant turn made the model reply in prose, so Groq rejected the structured call."""
+    llm = GroqLLM.__new__(GroqLLM)
+    llm.retries, llm.governor, llm._messages, llm.method = 0, TokenGovernor(limit=10**9), GroqLLM._messages, None
+    seen = {}
+
+    class Chat:
+        def __init__(self, **kw): ...
+        def with_structured_output(self, schema, **kw):
+            class R:
+                def invoke(self, msgs):
+                    seen["msgs"] = msgs
+                    return {"raw": None, "parsed": object(), "parsing_error": None}
+            return R()
+    llm._ChatGroq, llm._kw = Chat, {}
+    llm.structured(dict, "SYS", "And for 2025?", [("human", "What was revenue in 2026?"), ("ai", "It was 331,839 [1].")])
+    roles = [m[0] for m in seen["msgs"]]
+    assert roles == ["system", "human"]                       # no "ai" turn for the model to imitate
+    body = seen["msgs"][1][1]
+    assert "What was revenue in 2026?" in body and "It was 331,839 [1]." in body and body.endswith("And for 2025?")
+
+
+def test_plain_text_calls_still_use_real_turns():
+    assert GroqLLM._messages("S", "U", [("human", "a"), ("ai", "b")]) == [("system", "S"), ("human", "a"), ("ai", "b"), ("human", "U")]
+
+
 def test_est_tokens_is_a_modest_overestimate():
     assert 280 < est_tokens("a" * 1000) < 400
 

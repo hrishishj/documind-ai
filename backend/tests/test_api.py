@@ -17,9 +17,10 @@ from tests.test_workflow_graph import FakeLLM, GOOD, docx_plan
 NOKEY = dict(groq_api_key="")
 
 
-def make_client(test_database, tmp_path, llm=None, **over):
+def make_client(test_database, tmp_path, llm=None, indexer=None, **over):
+    """`indexer=None` (default) disables document search, so these tests never load the real embedder or touch Pinecone."""
     settings = Settings(storage_dir=tmp_path / "store", **{**NOKEY, **over})
-    app = create_app(settings, llm=llm, checkpointer=MemorySaver(), database=test_database)
+    app = create_app(settings, llm=llm, checkpointer=MemorySaver(), database=test_database, indexer=indexer)
     return TestClient(app)
 
 

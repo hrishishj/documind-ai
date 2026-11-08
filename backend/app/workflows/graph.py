@@ -26,6 +26,9 @@ from app.document_engine.render import apply_plan, detect_format, validate_plan
 from app.document_engine.planner_view import build_planner_view
 from app.document_engine.xlsx.analyzer import analyze_spreadsheet
 from app.llm.provider import LLM, StructuredOutputError
+from app.rag.answer import (NOT_FOUND, QA_SYSTEM, TOP_K, GroundedAnswer, attribute_sources, evidence_snippet, format_sources,
+                            normalize_text, relevant, verify_citations)
+from app.rag.retrieve import Indexer
 from app.services.storage import LocalStorage
 from app.workflows.state import ChatState
 
@@ -68,6 +71,7 @@ class Deps:
     llm: LLM
     storage: LocalStorage
     profiles: LRUCache = field(default_factory=LRUCache)  # sha256 of file -> analysis profile (bounded cache)
+    retriever: Indexer | None = None                       # document search; None disables grounded answers
 
 
 def _file_hash(p: Path) -> str:
@@ -102,7 +106,65 @@ def build_graph(deps: Deps, checkpointer=None):
             deps.profiles[key] = _ANALYZERS[detect_format(path)](path)
         return deps.profiles[key]
 
+    def _retrieve(state: ChatState):
+        """(relevant sources, number of files still indexing). Retrieval trouble never breaks chat: it just returns nothing."""
+        if deps.retriever is None:
+            return [], 0
+        uploads = [f for f in state.get("files", []) if f.get("kind") == "upload"]
+        pending = sum(1 for f in uploads if f.get("index_status") in ("pending", "indexing"))
+        if not any(f.get("index_status") == "ready" for f in uploads):
+            return [], pending
+        try:
+            found = deps.retriever.search(state["session_id"], state["user_message"], k=TOP_K)
+        except Exception:  # noqa: BLE001
+            log.exception("retrieval failed; falling back to plain chat")
+            return [], pending
+        return relevant(found), pending
+
+    def _grounded(state: ChatState, sources) -> dict | None:
+        """Answer from the sources. Every [n] marker is verified; returns None if the model call fails (caller falls back)."""
+        system = QA_SYSTEM.format(files=describe_files(state.get("files", [])), sources=format_sources(sources))
+        out = None
+        for attempt in (1, 2):  # a malformed (non-structured) reply is worth exactly one more try
+            try:
+                out = deps.llm.structured(GroundedAnswer, system, state["user_message"], state.get("history", [])[-6:], max_tokens=900)
+                break
+            except StructuredOutputError as e:
+                log.warning("grounded answer attempt %d: %s", attempt, e.message)
+            except ExternalServiceError as e:
+                return {"error": e.message, "response": "I couldn't reach the language model just now. Please try again."}
+        if out is None:  # reachable, but it twice failed to produce a usable answer: say that, not "unreachable"
+            return {"response": "I found relevant passages but couldn't put together a reliable answer just now. "
+                                "Please try asking again, or rephrase the question.", "citations": []}
+        text, cited, removed = verify_citations(normalize_text(out.answer), sources)
+        if removed:
+            log.warning("dropped citation markers not backed by a retrieved source: %s", removed)
+        if not out.answerable or not text.strip():
+            # never return an empty reply (the model sometimes sets answerable=false and writes nothing)
+            return {"response": text.strip() or NOT_FOUND, "citations": []}
+        if not cited:
+            # the model forgot its markers: attach passages that literally contain the answer's figures, if any do
+            found = attribute_sources(text, sources)
+            if found:
+                text += " " + "".join(f"[{s.n}]" for s in sorted(found, key=lambda s: s.n))
+                cited = found
+            else:
+                # an answer drawn from documents must point at them; if it can't, say so instead of implying verification
+                return {"response": text, "citations": [],
+                        "notice": "I couldn't tie this answer to a specific passage in your documents, so please treat it with care."}
+        return {"response": text, "citations": [
+            {"n": s.n, "file_id": s.file_id, "file_name": s.file_name, "locator": s.locator, "title": s.title,
+             "snippet": evidence_snippet(s.text, text, state["user_message"]), "score": s.score} for s in cited]}
+
     def chat_node(state: ChatState) -> dict:
+        sources, pending = _retrieve(state)
+        if sources:
+            res = _grounded(state, sources)
+            if res is not None:
+                note = res.pop("notice", None)
+                if note:
+                    res["response"] += f"\n\n_{note}_"
+                return res
         files = state.get("files", [])
         editable = [f for f in files if f["format"] in ("docx", "pptx", "xlsx")]
         context = ""
@@ -118,7 +180,10 @@ def build_graph(deps: Deps, checkpointer=None):
                                  state["user_message"], state.get("history", [])[-10:])
         except ExternalServiceError as e:
             return {"error": e.message, "response": "I couldn't reach the language model just now. Please try again."}
-        return {"response": text}
+        if pending:
+            text += (f"\n\n_{pending} file(s) are still being indexed for search, so I may not be able to answer from "
+                     "them yet. Ask again in a moment._")
+        return {"response": text, "citations": []}
 
     def understand_node(state: ChatState) -> dict:
         target = state["target"]

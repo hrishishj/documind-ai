@@ -10,6 +10,23 @@ from app.database.session import Database
 TEST_DB = "documind_ai_test"
 
 
+def pytest_addoption(parser):
+    parser.addoption("--runslow", action="store_true", default=False, help="run slow tests (real embedding model, ~2 min)")
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: slow tests that load the real embedding model; enable with --runslow")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--runslow"):
+        return
+    skip = pytest.mark.skip(reason="slow; run with --runslow")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip)
+
+
 @pytest.fixture(scope="session")
 def test_database():
     """An isolated database on the same server (created on demand, schema built from the models)."""
