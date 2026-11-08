@@ -203,7 +203,11 @@ def _table(tbl, index: int) -> dict:
                         slot = cell_borders.setdefault(side, {"cells": 0, "example": _border_attrs(b)})
                         slot["cells"] += 1
     first_row = [c.text for c in tbl.rows[0].cells] if tbl.rows else []
+    # content preview by w:tc position (the same "col" the renderer's docx.set_cell uses)
+    preview = [[("".join(t.text or "" for t in tc.iter(qn("w:t"))).strip()[:24]) for tc in tr.findall(qn("w:tc"))][:10]
+               for tr in el.findall(qn("w:tr"))[:4]]
     out = {
+        "preview": preview,
         "index": index, "style": tbl.style.name if tbl.style is not None else None,
         "rows": len(tbl.rows), "cols": len(tbl.columns), "column_widths_in": grid,
         "borders": _borders(el), "cell_borders": cell_borders, "shading_summary": dict(fills),

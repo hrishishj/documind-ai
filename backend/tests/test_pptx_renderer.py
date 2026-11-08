@@ -120,6 +120,12 @@ def test_add_slide_uses_template_layout_and_drops_unfilled_placeholders(src, tmp
     assert analyze_pptx(out)["masters"][0]["decor"] == analyze_pptx(src)["masters"][0]["decor"]
 
 
+def test_footer_and_date_placeholders_are_rejected_not_silently_dropped(src, tmp_path):
+    with pytest.raises(PlanError, match="no fillable placeholder idx"):
+        render_pptx(src, plan({"op": "pptx.add_slide", "layout": "Title Only", "texts": {"0": "T", "11": "Footer text"}}),
+                    tmp_path / "o.pptx")
+
+
 def test_add_slide_leaves_no_empty_placeholder_shells(src, tmp_path):
     out = tmp_path / "o.pptx"
     render_pptx(src, plan({"op": "pptx.add_slide", "layout": "Title and Content", "texts": {"0": "Only title"}}), out)
