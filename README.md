@@ -122,4 +122,4 @@ result pages. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security-mo
 
 ## License
 
-Not yet chosen; all rights reserved until one is added.
+[MIT](LICENSE). The sample SEC filing and investor deck in `sample_templates/` are public documents of their respective companies and are not covered by this license.
