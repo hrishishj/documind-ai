@@ -126,6 +126,20 @@ describe('App: search indexing and citations', () => {
     expect(calls()).toBe(before)
   })
 
+  it('shows a "Searching the web" step only on turns that search', async () => {
+    let push!: (c: Uint8Array) => void, close!: () => void
+    srv.chat = () => new Response(new ReadableStream({ start(c) { push = (x) => c.enqueue(x); close = () => c.close() } }), { status: 200 })
+    render(<App />)
+    await screen.findByText(/Edit Office documents/)
+    await userEvent.type(screen.getByLabelText('Message'), 'Search the web for batteries{Enter}')
+    await screen.findByRole('button', { name: 'Stop' })
+    push(ev('node', { node: 'route', label: 'Understanding your request' })); push(ev('node', { node: 'research', label: 'Searching the web' }))
+    const working = await screen.findByLabelText('Working')
+    expect(await within(working).findByText('Searching the web')).toBeInTheDocument()
+    push(ev('final', { content: 'Done [1].', meta: {}, citations: [] })); close()
+    await waitFor(() => expect(screen.queryByLabelText('Working')).toBeNull())
+  })
+
   it('shows stored citations on a reloaded conversation', async () => {
     srv.detail.messages.push({ id: 'a1', role: 'assistant', content: 'Revenue was 331,839 [1].', meta: {}, created_at: 't',
       citations: [{ ref: 1, source_type: 'document', title: 'report.docx', locator: 'Table 3', snippet: 'Total revenue | 331839', file_id: 'f1', url: null }] })

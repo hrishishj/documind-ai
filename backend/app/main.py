@@ -36,7 +36,7 @@ _UNSET = object()
 
 
 def create_app(settings: Settings | None = None, llm=None, checkpointer=None, database: Database | None = None,
-               indexer=_UNSET) -> FastAPI:
+               indexer=_UNSET, web=_UNSET) -> FastAPI:
     """Build the app. Collaborators can be injected (tests pass a fake LLM, in-memory checkpointer, test DB and indexer).
     `indexer=None` explicitly disables document search; leaving it unset builds the real one from the settings."""
     settings = settings or get_settings()
@@ -67,7 +67,12 @@ def create_app(settings: Settings | None = None, llm=None, checkpointer=None, da
             from app.llm.provider import GroqLLM
             model = GroqLLM()
         st.indexer = _default_indexer(settings) if indexer is _UNSET else indexer
-        st.graph = build_graph(Deps(model, st.storage, retriever=st.indexer), checkpointer=cp) if model is not None else None
+        if web is _UNSET:
+            from app.research.search import build_search
+            st.web = build_search(settings.tavily_api_key)
+        else:
+            st.web = web
+        st.graph = build_graph(Deps(model, st.storage, retriever=st.indexer, web=st.web), checkpointer=cp) if model is not None else None
         if st.graph is None:
             log.warning("GROQ_API_KEY not set: uploads work, chat is disabled")
         yield

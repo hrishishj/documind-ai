@@ -92,6 +92,29 @@ def test_insert_paragraphs_keep_plan_order_and_clone_style(styled, tmp_path):
         assert (r.font.name, r.font.size.pt, r.font.bold) == ("Arial", 14.0, True)
 
 
+def test_append_paragraph_goes_after_a_trailing_table_in_order_keeping_the_final_section_properties_last(src, tmp_path):
+    out = tmp_path / "o.docx"
+    render_docx(src, plan({"op": "docx.append_paragraph", "text": "first appended", "like": 1},
+                          {"op": "docx.append_paragraph", "text": "second appended", "like": 1}), out)
+    body = Document(str(out)).element.body
+    kids = list(body)
+    assert kids[-1].tag.endswith("}sectPr")                                   # section properties stay last
+    tail = [k for k in kids[-3:-1]]
+    assert ["".join(t.text or "" for t in k.iter(qn("w:t"))) for k in tail] == ["first appended", "second appended"]
+    tbl = next(i for i, k in enumerate(kids) if k.tag.endswith("}tbl"))
+    assert tbl < len(kids) - 3                                                # strictly after the table that ended the document
+    # formatting is cloned from paragraph 1 (the fixture's intro paragraph), like docx.insert_paragraph does
+    assert Document(str(out)).paragraphs[-1].style.name == Document(str(src)).paragraphs[1].style.name
+
+
+def test_append_paragraph_rejects_a_missing_or_deleted_template_paragraph(src, tmp_path):
+    with pytest.raises(PlanError, match="out of range"):
+        render_docx(src, plan({"op": "docx.append_paragraph", "text": "x", "like": 99}), tmp_path / "o.docx")
+    with pytest.raises(PlanError, match="deleted by an earlier op"):
+        render_docx(src, plan({"op": "docx.delete_paragraph", "paragraph": 1},
+                              {"op": "docx.append_paragraph", "text": "x", "like": 1}), tmp_path / "o.docx")
+
+
 def test_delete_and_header_style_preserved(src, tmp_path):
     out = tmp_path / "o.docx"
     render_docx(src, plan({"op": "docx.delete_paragraph", "paragraph": 2}), out)

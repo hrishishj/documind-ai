@@ -18,7 +18,8 @@ router = APIRouter()
 
 NODE_LABELS = {
     "route": "Understanding your request", "understand": "Reading the document", "plan": "Planning the edit",
-    "validate": "Checking the plan", "render": "Applying changes to a copy of your file", "respond": "Writing the summary",
+    "research": "Searching the web", "validate": "Checking the plan", "render": "Applying changes to a copy of your file",
+    "respond": "Writing the summary",
     "chat": "Thinking", "give_up": "Wrapping up",
 }
 
@@ -204,9 +205,10 @@ def _chat_events(st, session_id: str, message: str, slot: int) -> Iterator[str]:
             if citations:
                 store.add_citations(db, msg_id, citations)
         yield _sse("final", {"message_id": msg_id, "content": response, "meta": meta, "intent": state.get("intent"),
-                             "citations": [{"ref": c["n"], "title": c["file_name"], "locator": c["locator"],
-                                            "snippet": c["snippet"], "file_id": c["file_id"], "source_type": "document",
-                                            "url": None} for c in citations]})
+                             "citations": [{"ref": c["n"], "title": c["title"] if c.get("kind") == "web" else c["file_name"],
+                                            "locator": c["locator"], "snippet": c["snippet"], "file_id": c["file_id"] or None,
+                                            "source_type": c.get("kind", "document"), "url": c.get("url") or None}
+                                           for c in citations]})
     except AppError as e:
         yield _sse("error", {"code": e.code, "message": e.message})
     except Exception:  # noqa: BLE001

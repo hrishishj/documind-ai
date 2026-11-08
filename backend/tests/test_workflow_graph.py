@@ -215,11 +215,23 @@ def test_pdf_is_never_an_edit_target(env):
 
 @pytest.mark.parametrize("msg,expected", [
     ("Slide 3's title should be Results", "edit"), ("make it shorter", "edit"), ("Hello there", "chat"),
-    ("What does slide 2 say?", "chat"), ("Explain the revenue table", "chat")])
+    ("What does slide 2 say?", "chat"), ("Explain the revenue table", "chat"),
+    # regression: these were routed to plain chat because the verb was missing from the list
+    ("Retitle the report", "edit"), ("rephrase the intro", "edit"), ("Revise the second paragraph", "edit"),
+    ("Please reformat the table", "edit"), ("expand the summary slide", "edit"), ("condense this section", "edit"),
+    ("Polish the wording on slide 4", "edit"), ("proofread the document", "edit")])
 def test_quick_route_classification(msg, expected):
     f = [{"id": "f", "name": "r.docx", "path": "x", "format": "docx", "kind": "upload"}]
     got = quick_route(msg, f)
     assert got is not None and got[0].intent == expected
+
+
+@pytest.mark.parametrize("msg", ["What was the edit history of the file?", "Who wrote the cut scene?",
+                                 "What does the report include?", "How do I put a border on the table?"])
+def test_questions_that_merely_contain_an_edit_word_are_deferred_to_the_llm_not_guessed(msg):
+    """The widened verb list must never turn a question into an edit: it returns 'undecided' and the model decides."""
+    f = [{"id": "f", "name": "r.docx", "path": "x", "format": "docx", "kind": "upload"}]
+    assert quick_route(msg, f) is None
 
 
 def test_how_do_i_question_is_left_to_the_llm():

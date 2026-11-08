@@ -63,7 +63,11 @@
 .sources { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; font-size: 0.88rem; }
 .sources-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
 .sources ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.src-btn { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: 0; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+.src-row { display: flex; align-items: baseline; gap: 6px; }
+.src-btn { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+.open-link { font-size: 0.8rem; white-space: nowrap; padding: 2px 6px; border-radius: 6px; text-decoration: none; border: 1px solid var(--border); }
+.open-link:hover { background: var(--surface-2); }
+.web-badge { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
 .src-btn:hover, .sources li.active .src-btn { background: var(--surface-2); }
 .sources blockquote { margin: 2px 0 6px 30px; padding: 6px 10px; border-left: 3px solid var(--accent); background: var(--bg); color: var(--muted); border-radius: 0 6px 6px 0; overflow-wrap: anywhere; }
 .index-status { font-size: 0.78rem; margin-top: 4px; }

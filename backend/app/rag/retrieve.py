@@ -31,6 +31,8 @@ class Source:
     text: str
     score: float           # re-ranked relevance in [0, 1]
     cosine: float
+    url: str = ""          # web sources only
+    kind: str = "document"  # "document" | "web"
 
 
 def _terms(s: str) -> set[str]:

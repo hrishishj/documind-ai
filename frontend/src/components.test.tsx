@@ -94,6 +94,45 @@ describe('citations', () => {
   })
 })
 
+describe('web citations', () => {
+  const web = (ref: number, over = {}): Citation => ({
+    ref, source_type: 'web', title: 'Solid-State Battery Technology', locator: 'mdpi.com', snippet: 'about 400 Wh/kg',
+    file_id: null, url: 'https://www.mdpi.com/1996-1073/19/11/2659', ...over,
+  })
+
+  it('shows a WEB badge and an Open link that is safe to click', () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]} messages={[msg({ id: 'a', content: 'About 400 Wh/kg [1].', citations: [web(1)] })]} />)
+    const link = screen.getByRole('link', { name: 'Open Solid-State Battery Technology in a new tab' })
+    expect(link).toHaveAttribute('href', 'https://www.mdpi.com/1996-1073/19/11/2659')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')       // the opened page can never reach back into this app
+    expect(screen.getByText('WEB')).toBeInTheDocument()
+    expect(screen.getByText('mdpi.com')).toBeInTheDocument()
+  })
+
+  it.each(['javascript:alert(1)', 'data:text/html,<script>1</script>', 'file:///etc/passwd', 'not a url', '', 'ftp://x.org/a'])(
+    'never renders a link for the unsafe URL %j', (bad) => {
+      render(<MessageList sessionId="s" busy={false} steps={[]} messages={[msg({ id: 'a', content: 'Claim [1].', citations: [web(1, { url: bad })] })]} />)
+      expect(screen.queryByRole('link', { name: /Open/ })).toBeNull()
+      expect(screen.getByText('Solid-State Battery Technology')).toBeInTheDocument()  // the source is still listed, just not clickable
+    })
+
+  it('document citations get no WEB badge and no Open link', () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]} messages={[msg({ id: 'a', content: 'Claim [1].', citations: [cite(1)] })]} />)
+    expect(screen.queryByText('WEB')).toBeNull()
+    expect(screen.queryByRole('link', { name: /Open/ })).toBeNull()
+  })
+
+  it('mixes document and web sources in one numbered list', async () => {
+    render(<MessageList sessionId="s" busy={false} steps={[]} messages={[msg({ id: 'a', content: 'Ours [1] vs public [2].', citations: [cite(1), web(2)] })]} />)
+    const list = screen.getByLabelText('Sources')
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(list).getAllByText('WEB')).toHaveLength(1)
+    await userEvent.click(screen.getByRole('button', { name: /^Source 2: Solid-State/ }))
+    expect(screen.getByText('about 400 Wh/kg', { selector: 'blockquote' })).toBeInTheDocument()
+  })
+})
+
 describe('index status badges', () => {
   const file = (over = {}) => ({ id: 'f', original_name: 'a.docx', kind: 'docx', size_bytes: 10, created_at: '', index_status: 'ready' as const, chunk_count: 3, index_error: '', ...over })
   const panel = (f: ReturnType<typeof file>) => render(<FilesPanel sessionId="s" files={[f]} artifacts={[]} uploading={[]} onAnalysis={() => {}} />)
