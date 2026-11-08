@@ -54,10 +54,13 @@ def build_graph(deps: Deps, checkpointer=None):
         try:
             decision, target = route(deps.llm, state["user_message"], state.get("history", []), state.get("files", []))
         except ExternalServiceError as e:
-            return {"intent": "error", "error": e.message,
-                    "response": "I couldn't reach the language model just now. Please try again in a moment."}
+            return {"intent": "error", "error": e.message, "plan": None, "artifact": None, "render": None, "plan_errors": [],
+                    "declined": False, "response": "I couldn't reach the language model just now. Please try again in a moment."}
+        # Reset EVERYTHING per-turn: the checkpointer keeps the previous turn's state under the same thread id, and a
+        # stale `response`/`plan` from the last message would otherwise be mistaken for this turn's.
         update = {"intent": decision.intent, "target": target, "route_reason": decision.reason, "attempts": 0,
-                  "plan_errors": [], "plan": None, "artifact": None, "render": None, "error": None, "citations": []}
+                  "plan_errors": [], "plan": None, "artifact": None, "render": None, "error": None, "citations": [],
+                  "response": "", "declined": False, "profile_summary": ""}
         if decision.intent == "clarify":
             update["response"] = decision.clarification or "Could you tell me which document you mean?"
         return update
@@ -118,7 +121,8 @@ def build_graph(deps: Deps, checkpointer=None):
             return {}
         plan = EditPlan.model_validate(state["plan"])
         if not plan.ops:  # the model declined / needs more info: relay its explanation, do not render
-            return {"plan_errors": [], "response": plan.summary or "I couldn't find a way to make that change."}
+            return {"plan_errors": [], "declined": True,
+                    "response": plan.summary or "I couldn't find a way to make that change."}
         errs = validate_plan(deps.storage.resolve(state["target"]["path"]), plan)
         return {"plan_errors": errs}
 
@@ -167,7 +171,7 @@ def build_graph(deps: Deps, checkpointer=None):
         return {"edit": "understand", "chat": "chat"}.get(state.get("intent", ""), END)
 
     def after_validate(state: ChatState) -> str:
-        if state.get("response") and not state.get("plan_errors"):
+        if state.get("declined"):
             return END  # model declined / explained instead of planning
         if not state.get("plan_errors"):
             return "render"
