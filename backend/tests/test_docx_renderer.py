@@ -1,4 +1,3 @@
-import copy
 import hashlib
 
 import pytest
@@ -183,12 +182,15 @@ def test_reference_to_deleted_paragraph_is_rejected(src, tmp_path):
 
 
 def test_plan_schema_rejects_garbage():
-    with pytest.raises(Exception):
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
         plan({"op": "docx.replace_text", "paragraph": -1, "text": "x"})
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         plan({"op": "docx.replace_text", "paragraph": 0, "text": "x", "surprise": 1})
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError, match="do not belong to format 'docx'"):
         EditPlan.model_validate({"format": "docx", "ops": [{"op": "pptx.delete_slide", "slide": 1}]})
+    with pytest.raises(ValidationError, match="union_tag_invalid|does not match any of the expected tags"):
+        plan({"op": "docx.explode", "paragraph": 0})  # unknown operations are refused outright
 
 
 def test_output_reanalyzes_cleanly(src, tmp_path):

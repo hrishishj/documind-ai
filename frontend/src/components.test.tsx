@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { Composer, MessageList, fmtSize } from './components'
+import { Composer, MessageList } from './components'
+import { fmtSize } from './utils'
 import { RichText } from './RichText'
 import type { Message } from './api'
 

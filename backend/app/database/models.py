@@ -25,6 +25,8 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    # anonymous per-browser identity (httpOnly cookie); sessions are only visible to the client that created them
+    owner: Mapped[str] = mapped_column(String(64), index=True, default="", server_default="")
     title: Mapped[str] = mapped_column(String(200), default="New chat")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)

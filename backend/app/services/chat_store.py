@@ -11,26 +11,30 @@ from app.services.uploads import ValidatedUpload
 from app.workflows.state import FileRef
 
 
-def create_session(db: Session, title: str = "New chat") -> ChatSession:
-    s = ChatSession(title=title[:200])
+def create_session(db: Session, owner: str, title: str = "New chat") -> ChatSession:
+    s = ChatSession(owner=owner, title=title[:200])
     db.add(s)
     db.commit()
     return s
 
 
-def get_session(db: Session, session_id: str) -> ChatSession:
+def get_session(db: Session, session_id: str, owner: str) -> ChatSession:
+    """Another client's session is indistinguishable from a missing one (same 404)."""
     s = db.get(ChatSession, session_id)
-    if s is None:
+    if s is None or not owner or s.owner != owner:
         raise NotFoundError("session not found")
     return s
 
 
-def list_sessions(db: Session, limit: int = 100) -> list[ChatSession]:
-    return list(db.scalars(select(ChatSession).order_by(ChatSession.updated_at.desc()).limit(limit)))
+def list_sessions(db: Session, owner: str, limit: int = 100) -> list[ChatSession]:
+    if not owner:
+        return []
+    return list(db.scalars(select(ChatSession).where(ChatSession.owner == owner)
+                           .order_by(ChatSession.updated_at.desc()).limit(limit)))
 
 
-def delete_session(db: Session, storage: LocalStorage, session_id: str) -> None:
-    s = get_session(db, session_id)
+def delete_session(db: Session, storage: LocalStorage, session_id: str, owner: str) -> None:
+    s = get_session(db, session_id, owner)
     db.delete(s)  # cascades to messages, files, profiles, artifacts, versions, citations
     db.commit()
     shutil.rmtree(storage.root / session_id, ignore_errors=True)
@@ -49,6 +53,14 @@ def add_message(db: Session, session_id: str, role: str, content: str, meta: dic
 def recent_history(db: Session, session_id: str, n: int = 10) -> list[tuple[str, str]]:
     rows = db.scalars(select(Message).where(Message.session_id == session_id).order_by(Message.created_at.desc()).limit(n))
     return [("human" if m.role == "user" else "ai", m.content) for m in reversed(list(rows))]
+
+
+def upload_usage(db: Session, session_id: str) -> tuple[int, int]:
+    """(number of uploaded files, total bytes) for a conversation."""
+    from sqlalchemy import func
+    n, total = db.execute(select(func.count(), func.coalesce(func.sum(UploadedFile.size_bytes), 0))
+                          .where(UploadedFile.session_id == session_id)).one()
+    return int(n), int(total)
 
 
 def record_upload(db: Session, session_id: str, v: ValidatedUpload, stored_rel: str, sha: str) -> UploadedFile:

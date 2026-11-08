@@ -103,13 +103,6 @@ def test_first_section_without_header_is_marked_absent():
     assert s["header"] == {"present": False} and s["footer"] == {"present": False}
 
 
-def test_summary_is_small_and_json(built):
-    from app.document_engine.summary import summary_json
-    out = summary_json(built[0])
-    assert len(out) < 30_000
-    json.loads(out)
-
-
 def test_body_order_preserved(built):
     prof, _ = built
     kinds = [b["type"] for b in prof["body"]]

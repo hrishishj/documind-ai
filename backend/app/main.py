@@ -11,7 +11,7 @@ from app.database.session import Database
 from app.document_engine.docx.analyzer import analyze_docx
 from app.document_engine.pptx.analyzer import analyze_pptx
 from app.document_engine.xlsx.analyzer import analyze_spreadsheet
-from app.services.gate import SessionGate
+from app.services.gate import SessionGate, SlotLimiter
 from app.services.storage import LocalStorage
 from app.workflows.graph import Deps, build_graph
 
@@ -28,6 +28,7 @@ def create_app(settings: Settings | None = None, llm=None, checkpointer=None, da
     async def lifespan(app: FastAPI):
         st = app.state
         st.settings, st.gate = settings, SessionGate()
+        st.slots = SlotLimiter(settings.max_concurrent_chats)
         st.db = database or Database(settings.sqlalchemy_url)
         st.storage = LocalStorage(settings.storage_path)
         st.analyzers = {"docx": analyze_docx, "pptx": analyze_pptx, "xlsx": analyze_spreadsheet}
@@ -56,7 +57,8 @@ def create_app(settings: Settings | None = None, llm=None, checkpointer=None, da
             st.db.dispose()
 
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
-    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_methods=["*"], allow_headers=["*"])
+    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True,
+                       allow_methods=["*"], allow_headers=["*"])
     register_error_handlers(app)
     app.include_router(router)
 

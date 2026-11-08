@@ -49,6 +49,36 @@ def clean_name(name: str) -> str:
     return (base[:150] or "file")
 
 
+MAX_DOCX_PARAGRAPHS = 200_000
+MAX_PPTX_SLIDES = 600
+MAX_XLSX_CELLS = 2_000_000
+MAX_XML_PART = 120 * 1024 * 1024
+
+
+def _check_complexity(z: zipfile.ZipFile, ext: str, names: set[str]) -> None:
+    """Reject documents that are small on disk but would take minutes (or GBs) to analyse. Counting tags in the raw
+    XML is cheap and happens before any parser sees the file."""
+    for i in z.infolist():
+        if i.filename.lower().endswith((".xml", ".rels")) and i.file_size > MAX_XML_PART:
+            raise UnsafeFileError("a part of this document is unreasonably large")
+    if ext == "docx":
+        xml = z.read("word/document.xml") if "word/document.xml" in names else b""
+        # <w:p/> (self-closing empty paragraph) is valid XML too; counting only the open forms would be bypassable
+        if xml.count(b"<w:p>") + xml.count(b"<w:p ") + xml.count(b"<w:p/>") > MAX_DOCX_PARAGRAPHS:
+            raise UnsafeFileError(f"document has more than {MAX_DOCX_PARAGRAPHS:,} paragraphs (too complex to analyse)")
+    elif ext in ("pptx", "potx"):
+        slides = sum(1 for n in names if re.fullmatch(r"ppt/slides/slide\d+\.xml", n))
+        if slides > MAX_PPTX_SLIDES:
+            raise UnsafeFileError(f"presentation has more than {MAX_PPTX_SLIDES} slides (too complex to analyse)")
+    elif ext == "xlsx":
+        cells = 0
+        for n in names:
+            if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", n):
+                cells += z.read(n).count(b"<c ")
+                if cells > MAX_XLSX_CELLS:
+                    raise UnsafeFileError(f"workbook has more than {MAX_XLSX_CELLS:,} cells (too complex to analyse)")
+
+
 def _check_zip(data: bytes, ext: str) -> None:
     if not data.startswith(b"PK\x03\x04"):
         raise UnsafeFileError(f"this is not a valid .{ext} file (not an Office Open XML package)")
@@ -86,6 +116,7 @@ def _check_zip(data: bytes, ext: str) -> None:
             head = z.open(i).read(4096)
             if b"<!DOCTYPE" in head or b"<!ENTITY" in head:
                 raise UnsafeFileError("XML part declares a DOCTYPE/ENTITY (not allowed)")
+    _check_complexity(z, ext, names)
 
 
 def validate_upload(filename: str, data: bytes, max_bytes: int) -> ValidatedUpload:

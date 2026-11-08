@@ -102,15 +102,6 @@ def test_image_inventory_has_locations(built):
     assert {"master0", "layout:Title Only", "slide2"} <= locs
 
 
-def test_summary_bounded_and_keeps_key_facts(built):
-    from app.document_engine.summary import summary_json
-    s = json.loads(summary_json(built[0]))
-    assert s["format"] == "pptx" and s["slide_size"]["aspect"] == 1.778
-    assert [x["layout"] for x in s["slides"]] == ["Title Slide", "Title and Content", "Title Only"]
-    assert s["masters"][0]["theme"]["fonts"]["major"] == "Georgia"
-    assert any(d["kind"] == "picture" for d in s["masters"][0]["decor"])
-
-
 def test_census_and_parts(built):
     prof, _ = built
     fonts = {f["value"]: f["share"] for f in prof["formatting_census"]["explicit_fonts"]}

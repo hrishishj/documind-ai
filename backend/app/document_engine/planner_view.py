@@ -29,7 +29,6 @@ def _docx(p: dict, instruction: str) -> list[str]:
     out = ["DOCX. P<n> = top-level paragraph n (0-based). T<n> = table n; row/col are 0-based, col = cell position in the row."]
     paras = [(b["index"], b) for b in p["body"] if b["type"] == "paragraph"]
     texty = [(i, b.get("text", "")) for i, b in paras if b.get("text", "").strip()]
-    heading = lambda t: False  # noqa: E731
     head_idx = {o["paragraph_index"] for o in p["outline"]}
     chosen = _pick(texty, instruction, keep_first=40, keep_matches=40) | head_idx
     by_idx = dict(paras)

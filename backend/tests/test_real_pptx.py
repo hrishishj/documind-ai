@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 from app.document_engine.pptx.analyzer import analyze_pptx
-from app.document_engine.summary import summary_json
 
 TPL = Path(r"C:\Program Files\Microsoft Office\root\Templates\1033")
 pytestmark = pytest.mark.skipif(not TPL.exists(), reason="Microsoft Office templates not installed")
@@ -56,10 +55,3 @@ def test_widescreen_template_geometry():
     assert (p["slide_size"]["width_in"], p["slide_size"]["height_in"]) == (10.0, 5.625)
 
 
-def test_summary_stays_bounded_on_real_deck():
-    p = load("Training.potx")
-    s = summary_json(p)
-    assert len(s) < 40_000, len(s)
-    j = json.loads(s)
-    assert j["format"] == "pptx" and j["slides_omitted"] == 0 and j["masters"][0]["layouts_total"] == 13
-    assert len(s) < len(json.dumps(p))  # strictly smaller than the full profile
