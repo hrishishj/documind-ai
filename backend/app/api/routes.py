@@ -42,7 +42,7 @@ def owner_dep(request: Request, response: Response) -> str:
     if not re.fullmatch(r"[0-9a-f]{32}", c):
         c = secrets.token_hex(16)
         response.set_cookie(COOKIE, c, httponly=True, samesite="lax", max_age=365 * 24 * 3600,
-                            secure=request.app.state.settings.app_env == "production")
+                            secure=request.app.state.settings.cookie_is_secure)
     return c
 
 

@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     max_concurrent_chats: int = 4
 
     cors_origins: str = "http://localhost:5173"
+    # None = secure cookie only in production. Set false when serving plain http (e.g. docker compose
+    # on a LAN address); keep true behind HTTPS.
+    cookie_secure: bool | None = None
+
+    @property
+    def cookie_is_secure(self) -> bool:
+        return self.app_env == "production" if self.cookie_secure is None else self.cookie_secure
 
     @property
     def storage_path(self) -> Path:

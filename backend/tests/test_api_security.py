@@ -84,6 +84,15 @@ def test_production_cookies_are_marked_secure(test_database, tmp_path):
         assert "Secure" in c.get("/sessions").headers["set-cookie"]
 
 
+def test_cookie_secure_flag_is_configurable(test_database, tmp_path):
+    with TestClient(app_for(test_database, tmp_path, app_env="production", cookie_secure=False)) as c:
+        assert "Secure" not in c.get("/sessions").headers["set-cookie"]
+    with TestClient(app_for(test_database, tmp_path, app_env="development", cookie_secure=True)) as c:
+        assert "Secure" in c.get("/sessions").headers["set-cookie"]
+    with TestClient(app_for(test_database, tmp_path, app_env="development")) as c:
+        assert "Secure" not in c.get("/sessions").headers["set-cookie"]
+
+
 def test_per_conversation_upload_limits(test_database, tmp_path, docx_bytes):
     with TestClient(app_for(test_database, tmp_path, max_files_per_session=2)) as c:
         sid = new_session(c)
