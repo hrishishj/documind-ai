@@ -22,6 +22,15 @@ from app.core.config import get_settings
 from app.database.models import Base
 
 target_metadata = Base.metadata
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Only manage tables defined in our models. The same database also holds LangGraph's checkpointer tables
+    (checkpoints, checkpoint_writes, ...); without this filter `alembic revision --autogenerate` would generate a
+    migration that DROPS them, deleting every conversation's saved state."""
+    if type_ == "table" and reflected and compare_to is None:
+        return False
+    return True
 # URL comes from .env via settings, never from alembic.ini (avoids committing credentials).
 # "%" must be doubled for ConfigParser interpolation.
 config.set_main_option("sqlalchemy.url", get_settings().sqlalchemy_url.replace("%", "%%"))
@@ -50,6 +59,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -71,7 +81,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata, include_object=include_object
         )
 
         with context.begin_transaction():

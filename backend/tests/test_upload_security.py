@@ -130,6 +130,31 @@ def test_too_many_parts_refused(good):
         validate_upload("a.docx", rewrite(good["docx"], add), 25 * MB)
 
 
+def test_documents_too_complex_to_analyse_are_refused_cheaply(good, monkeypatch):
+    # tiny on disk (highly compressible) but absurd structurally: must be refused before any parser sees it
+    import app.services.uploads as up
+    monkeypatch.setattr(up, "MAX_DOCX_PARAGRAPHS", 1000)
+    def swell(z, n, b):
+        z.writestr(n, b + b"<w:p/>" * 5000 if n == "word/document.xml" else b)
+    bloated = rewrite(good["docx"], swell)
+    assert len(bloated) < 100_000
+    with pytest.raises(UnsafeFileError, match="too complex"):
+        validate_upload("a.docx", bloated, 25 * MB)
+
+    monkeypatch.setattr(up, "MAX_PPTX_SLIDES", 2)
+    with pytest.raises(UnsafeFileError, match="more than 2 slides"):
+        validate_upload("a.pptx", good["pptx"], 25 * MB)  # the fixture deck has 3 slides
+
+    monkeypatch.setattr(up, "MAX_XLSX_CELLS", 5)
+    with pytest.raises(UnsafeFileError, match="too complex"):
+        validate_upload("a.xlsx", good["xlsx"], 25 * MB)
+
+
+def test_normal_documents_are_unaffected_by_the_complexity_limits(good):
+    for ext, data in good.items():
+        assert validate_upload(f"x.{ext}", data, 25 * MB).format == ext
+
+
 def test_size_limit_and_empty(good):
     with pytest.raises(UnsafeFileError, match="larger than the 1 MB"):
         validate_upload("a.docx", good["docx"] + b"\x00" * (2 * MB), MB)

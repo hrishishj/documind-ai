@@ -4,7 +4,6 @@ Everything here is deterministic (no LLM). The profile records what the file *ac
 contains so downstream edit planning can't hallucinate layout.
 """
 from collections import Counter
-from pathlib import Path
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -19,6 +18,8 @@ NS = {
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 }
+MAX_BODY_ITEMS = 20_000  # per-paragraph detail kept in the profile (counts stay exact beyond this)
+MAX_TABLES_DETAIL = 300
 BORDER_SIDES = ("top", "left", "bottom", "right", "insideH", "insideV")
 WRAP_TAGS = ("wrapNone", "wrapSquare", "wrapTight", "wrapThrough", "wrapTopAndBottom")
 
@@ -220,6 +221,12 @@ def _table(tbl, index: int) -> dict:
     return clean(out)
 
 
+def _toggle_on(rpr, tag: str) -> bool:
+    """A boolean run property (<w:b/>, <w:i/>) is on unless it is explicitly turned off."""
+    e = rpr.find(f"w:{tag}", NS)
+    return e is not None and e.get(qn("w:val")) not in ("0", "false", "off")
+
+
 # ---------- document-wide formatting census ----------
 def _census(doc, defaults) -> dict:
     """Text-weighted distribution of the formatting readers actually see (direct formatting
@@ -257,11 +264,8 @@ def _census(doc, defaults) -> dict:
             colors[c or "auto"] += n
             total += n
             if rpr is not None:
-                def on(tag):
-                    e = rpr.find(f"w:{tag}", NS)
-                    return e is not None and e.get(qn("w:val")) not in ("0", "false", "off")
-                bold += n if on("b") else 0
-                italic += n if on("i") else 0
+                bold += n if _toggle_on(rpr, "b") else 0
+                italic += n if _toggle_on(rpr, "i") else 0
                 underline += n if (rpr.find("w:u", NS) is not None and rpr.find("w:u", NS).get(qn("w:val")) != "none") else 0
 
     def top(c, k=6):
@@ -328,13 +332,28 @@ def analyze_docx(path) -> dict:
     from docx.table import Table
     from docx.text.paragraph import Paragraph
 
+    from docx.enum.style import WD_STYLE_TYPE
+
     body, outline, images, tables = [], [], [], []
     styles_used: dict[str, dict] = {}
+    style_by_id: dict = {}
+    body_truncated = False
+
+    def paragraph_style(el):
+        """Same result as Paragraph.style, but resolved once per style id. python-docx re-scans every style in the
+        document to find the default for each plain paragraph, which was 80% of the analysis time."""
+        ppr = el.find(qn("w:pPr"))
+        ps = ppr.find(qn("w:pStyle")) if ppr is not None else None
+        sid = ps.get(qn("w:val")) if ps is not None else None
+        if sid not in style_by_id:
+            style_by_id[sid] = doc.styles.get_by_id(sid, WD_STYLE_TYPE.PARAGRAPH)
+        return style_by_id[sid]
+
     p_i = t_i = 0
     for child in doc.element.body.iterchildren():
         if child.tag == qn("w:p"):
             p = Paragraph(child, doc)
-            st = p.style
+            st = paragraph_style(child)
             sname = st.name if st is not None else "Normal"
             if st is not None and sname not in styles_used:
                 styles_used[sname] = {"type": "paragraph", "based_on": st.base_style.name if st.base_style else None,
@@ -353,18 +372,23 @@ def analyze_docx(path) -> dict:
             if level is not None:
                 outline.append({"level": level, "text": p.text, "paragraph_index": p_i})
             num = child.find("w:pPr/w:numPr", NS) is not None
-            body.append(clean({
-                "type": "paragraph", "index": p_i, "style": sname, "text": p.text[:120],
-                "alignment": p.alignment.name if p.alignment is not None else None,
-                "list_item": num or None, "images": len(imgs) or None,
-                "direct_runs": [_run_fmt(r) for r in p.runs if _run_fmt(r)][:4] or None,
-            }))
+            if len(body) < MAX_BODY_ITEMS:
+                runs_fmt = [f for f in (_run_fmt(r) for r in p.runs[:8]) if f]
+                body.append(clean({
+                    "type": "paragraph", "index": p_i, "style": sname, "text": p.text[:120],
+                    "alignment": p.alignment.name if p.alignment is not None else None,
+                    "list_item": num or None, "images": len(imgs) or None,
+                    "direct_runs": runs_fmt[:4] or None,
+                }))
+            else:
+                body_truncated = True  # keep counting, but bound what is stored per document
             p_i += 1
         elif child.tag == qn("w:tbl"):
             tbl = Table(child, doc)
             prof = _table(tbl, t_i)
             tables.append(prof)
-            body.append({"type": "table", "index": t_i, "rows": prof["rows"], "cols": prof["cols"]})
+            if len(body) < MAX_BODY_ITEMS:
+                body.append({"type": "table", "index": t_i, "rows": prof["rows"], "cols": prof["cols"]})
             if tbl.style is not None and tbl.style.name not in styles_used:
                 styles_used[tbl.style.name] = {"type": "table"}
             t_i += 1
@@ -386,7 +410,9 @@ def analyze_docx(path) -> dict:
         "formatting_census": _census(doc, defaults),
         "outline": outline,
         "body": body,
-        "tables": tables,
+        "body_truncated": body_truncated,
+        "tables": tables[:MAX_TABLES_DETAIL],
+        "tables_truncated": len(tables) > MAX_TABLES_DETAIL,
         "images": images,
         "counts": {"paragraphs": p_i, "tables": t_i, "images": len(images), "sections": len(sections)},
     }

@@ -6,7 +6,9 @@ the model, so it cannot claim edits that did not happen.
 """
 import hashlib
 import logging
+import threading
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -16,7 +18,7 @@ from pydantic import ValidationError
 from app.agents.planner import make_plan
 from app.agents.prompts import CHAT_SYSTEM
 from app.agents.router import describe_files, route
-from app.core.errors import AppError, ExternalServiceError
+from app.core.errors import ExternalServiceError
 from app.document_engine.docx.analyzer import analyze_docx
 from app.document_engine.plan import EditPlan, PlanError
 from app.document_engine.pptx.analyzer import analyze_pptx
@@ -33,11 +35,39 @@ _ANALYZERS = {"docx": analyze_docx, "pptx": analyze_pptx, "xlsx": analyze_spread
 _OUT_EXT = {"docx": "docx", "pptx": "pptx", "xlsx": "xlsx"}
 
 
+class LRUCache:
+    """Small thread-safe LRU. Profiles can be hundreds of KB each, so an unbounded cache would leak memory."""
+
+    def __init__(self, maxsize: int = 24):
+        self.maxsize = maxsize
+        self._d: OrderedDict = OrderedDict()
+        self._mu = threading.Lock()
+
+    def __contains__(self, k) -> bool:
+        with self._mu:
+            return k in self._d
+
+    def __getitem__(self, k):
+        with self._mu:
+            self._d.move_to_end(k)
+            return self._d[k]
+
+    def __setitem__(self, k, v) -> None:
+        with self._mu:
+            self._d[k] = v
+            self._d.move_to_end(k)
+            while len(self._d) > self.maxsize:
+                self._d.popitem(last=False)
+
+    def __len__(self) -> int:
+        return len(self._d)
+
+
 @dataclass
 class Deps:
     llm: LLM
     storage: LocalStorage
-    profiles: dict[str, dict] = field(default_factory=dict)  # sha256 of file -> analysis profile (cache)
+    profiles: LRUCache = field(default_factory=LRUCache)  # sha256 of file -> analysis profile (bounded cache)
 
 
 def _file_hash(p: Path) -> str:

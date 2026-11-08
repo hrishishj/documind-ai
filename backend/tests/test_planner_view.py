@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from app.core.config import REPO_ROOT
@@ -5,7 +7,6 @@ from app.document_engine.docx.analyzer import analyze_docx
 from app.document_engine.planner_view import build_planner_view
 from app.document_engine.pptx.analyzer import analyze_pptx
 from app.document_engine.samples import build_docx, build_pptx, build_xlsx
-from app.document_engine.summary import summary_json
 from app.document_engine.xlsx.analyzer import analyze_spreadsheet, analyze_xlsx
 from app.llm.provider import est_tokens
 
@@ -43,7 +44,7 @@ def test_xlsx_view_has_values_ranges_tables_and_last_row(files):
 def test_view_is_far_smaller_than_the_json_summary(files):
     for f, fn in (("a.pptx", analyze_pptx), ("a.xlsx", analyze_xlsx)):
         p = fn(files / f)
-        assert len(build_planner_view(p)) < len(summary_json(p))
+        assert len(build_planner_view(p)) < len(json.dumps(p))
 
 
 def test_budget_is_enforced_and_marked(files):
@@ -73,7 +74,7 @@ OFFICE = __import__("pathlib").Path(r"C:\Program Files\Microsoft Office\root\Tem
 @pytest.mark.skipif(not OFFICE.exists(), reason="Office templates not installed")
 def test_real_deck_view_stays_under_budget():
     p = analyze_pptx(OFFICE)
-    assert est_tokens(build_planner_view(p, "change slide 2 title")) < 2000 < est_tokens(summary_json(p))
+    assert est_tokens(build_planner_view(p, "change slide 2 title")) < 2000 < est_tokens(json.dumps(p))
 
 
 XLS = REPO_ROOT / "sample_templates" / "xlsx" / "sec_filing_sample.xls"

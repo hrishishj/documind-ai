@@ -113,7 +113,3 @@ def test_real_xls_profile():
     assert inc["merged_count"] == 19
     assert inc["style_census"]["non_empty_cells"] > 50
     assert len(json.dumps(prof)) < 3_000_000
-    from app.document_engine.summary import summary_json
-    summ = summary_json(prof)
-    assert len(summ) < 40_000, len(summ)  # bounded no matter how many sheets
-    assert json.loads(summ)["sheets_omitted"] == 71

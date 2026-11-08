@@ -32,6 +32,9 @@ class Settings(BaseSettings):
 
     storage_dir: Path = Field(default=BACKEND_DIR / "storage")
     max_upload_mb: int = 25
+    max_files_per_session: int = 20
+    max_session_mb: int = 200
+    max_concurrent_chats: int = 4
 
     cors_origins: str = "http://localhost:5173"
 

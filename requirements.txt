@@ -9,6 +9,7 @@ click==8.5.1
 cloudpickle==3.1.2
 colorama==0.4.6
 courlan==1.4.0
+coverage==7.17.2
 dateparser==1.5.0
 ddgs==9.16.1
 distro==1.9.0
@@ -84,11 +85,10 @@ pymupdf==2.1
 pymupdf4llm==2.1
 pymupdf_layout==2.1
 pytest==9.2.0
-pytest-asyncio==1.4.1.post1
+pytest-cov==7.1.0
 python-dateutil==4.0.0
 python-docx==1.2.0
 python-dotenv==1.2.4
-python-magic-bin==0.4.14
 python-multipart==0.0.33
 python-pptx==1.0.2
 pytz==2026.6
@@ -97,6 +97,7 @@ regex==2026.11.7
 requests==2.34.2
 requests-toolbelt==1.0.0
 rich==15.0.0
+ruff==0.17.4
 safetensors==0.8.0
 scikit-learn==1.9.1
 scipy==1.18.1

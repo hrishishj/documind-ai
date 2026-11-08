@@ -3,10 +3,10 @@ from app.document_engine.plan import EditPlan, plan_model_for
 from app.llm.provider import LLM
 
 
-def make_plan(llm: LLM, fmt: str, summary_json: str, instruction: str, history: list[tuple[str, str]],
+def make_plan(llm: LLM, fmt: str, outline: str, instruction: str, history: list[tuple[str, str]],
               errors: list[str] | None = None, sources: str = "") -> EditPlan:
     """Ask the LLM for an edit plan. `errors` (from the validator) are fed back so it can self-correct."""
-    system = PLANNER_SYSTEM.format(fmt=fmt, summary=summary_json,
+    system = PLANNER_SYSTEM.format(fmt=fmt, summary=outline,
                                    sources=SOURCES_BLOCK.format(sources=sources) if sources else "")
     user = instruction
     if errors:

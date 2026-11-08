@@ -1,16 +1,14 @@
 import json
 import logging
 import re
+import secrets
 from collections.abc import Iterator
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError, ExternalServiceError, NotFoundError
-from app.database.models import Artifact, UploadedFile
-from app.document_engine.render import detect_format
 from app.schemas.api import (ArtifactOut, ChatIn, FileOut, MessageOut, SessionCreate, SessionDetail, SessionOut, UploadOut)
 from app.services import chat_store as store
 from app.services.uploads import validate_upload
@@ -33,6 +31,20 @@ def db_dep(request: Request) -> Iterator[Session]:
         db.close()
 
 
+COOKIE = "dm_client"
+
+
+def owner_dep(request: Request, response: Response) -> str:
+    """Anonymous per-browser identity. No login, but one browser can never see another's conversations.
+    (A first-time visitor gets the cookie on their first call, which is always GET/POST /sessions.)"""
+    c = request.cookies.get(COOKIE, "")
+    if not re.fullmatch(r"[0-9a-f]{32}", c):
+        c = secrets.token_hex(16)
+        response.set_cookie(COOKIE, c, httponly=True, samesite="lax", max_age=365 * 24 * 3600,
+                            secure=request.app.state.settings.app_env == "production")
+    return c
+
+
 def _analysis_summary(profile: dict) -> dict:
     out = {"format": profile["format"], "counts": profile.get("counts", {}), "warnings": profile.get("warnings", [])}
     if profile["format"] == "docx":
@@ -50,18 +62,18 @@ def _analysis_summary(profile: dict) -> dict:
 
 # ------------------------------------------------------------------ sessions
 @router.post("/sessions", response_model=SessionOut, status_code=201)
-def create_session(body: SessionCreate | None = None, db: Session = Depends(db_dep)):
-    return store.create_session(db, (body.title if body else "New chat"))
+def create_session(body: SessionCreate | None = None, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    return store.create_session(db, owner, (body.title if body else "New chat"))
 
 
 @router.get("/sessions", response_model=list[SessionOut])
-def list_sessions(db: Session = Depends(db_dep)):
-    return store.list_sessions(db)
+def list_sessions(db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    return store.list_sessions(db, owner)
 
 
 @router.get("/sessions/{session_id}", response_model=SessionDetail)
-def get_session(session_id: str, db: Session = Depends(db_dep)):
-    s = store.get_session(db, session_id)
+def get_session(session_id: str, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    s = store.get_session(db, session_id, owner)
     return SessionDetail(id=s.id, title=s.title, created_at=s.created_at, updated_at=s.updated_at,
                          messages=[MessageOut.model_validate(m) for m in s.messages],
                          files=[FileOut.model_validate(f) for f in s.files],
@@ -69,17 +81,23 @@ def get_session(session_id: str, db: Session = Depends(db_dep)):
 
 
 @router.delete("/sessions/{session_id}", status_code=204)
-def delete_session(session_id: str, request: Request, db: Session = Depends(db_dep)):
-    store.delete_session(db, request.app.state.storage, session_id)
+def delete_session(session_id: str, request: Request, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    store.delete_session(db, request.app.state.storage, session_id, owner)
 
 
 # ------------------------------------------------------------------ files
 @router.post("/sessions/{session_id}/files", response_model=UploadOut, status_code=201)
-def upload_file(session_id: str, request: Request, file: UploadFile = File(...), db: Session = Depends(db_dep)):
+def upload_file(session_id: str, request: Request, file: UploadFile = File(...), db: Session = Depends(db_dep),
+                owner: str = Depends(owner_dep)):
     st, settings = request.app.state, request.app.state.settings
-    store.get_session(db, session_id)
+    store.get_session(db, session_id, owner)
+    n_files, total = store.upload_usage(db, session_id)
+    if n_files >= settings.max_files_per_session:
+        raise AppError(f"this conversation already has {n_files} files (limit {settings.max_files_per_session}); start a new chat")
     max_bytes = settings.max_upload_mb * 1024 * 1024
     data = file.file.read(max_bytes + 1)  # never read more than limit+1 bytes into memory
+    if total + len(data) > settings.max_session_mb * 1024 * 1024:
+        raise AppError(f"this conversation would exceed its {settings.max_session_mb} MB storage limit")
     v = validate_upload(file.filename or "", data, max_bytes)
     path, sha = st.storage.save_upload(session_id, data, v.ext)
     rec = store.record_upload(db, session_id, v, st.storage.rel(path), sha)
@@ -99,7 +117,8 @@ def upload_file(session_id: str, request: Request, file: UploadFile = File(...),
 
 
 @router.get("/sessions/{session_id}/files/{file_id}/profile")
-def file_profile(session_id: str, file_id: str, db: Session = Depends(db_dep)):
+def file_profile(session_id: str, file_id: str, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    store.get_session(db, session_id, owner)
     f = store.get_file(db, session_id, file_id)
     if f.profile is None:
         raise NotFoundError("this file has no template analysis (only DOCX, PPTX and XLSX are analysed)")
@@ -112,20 +131,24 @@ def _sse(event: str, data: dict) -> str:
 
 
 @router.post("/sessions/{session_id}/chat")
-def chat(session_id: str, body: ChatIn, request: Request):
+def chat(session_id: str, body: ChatIn, request: Request, owner: str = Depends(owner_dep)):
     """Server-sent events: `node` progress events, then one `final` (or `error`)."""
     st = request.app.state
+    with st.db.session() as db:
+        store.get_session(db, session_id, owner)  # 404 (also for someone else's session) before streaming starts
     if st.graph is None:
         raise ExternalServiceError("the language model is not configured (set GROQ_API_KEY)")
-    with st.db.session() as db:
-        store.get_session(db, session_id)  # 404 before streaming starts
     if not st.gate.acquire(session_id):
         raise AppError("another request for this conversation is still running")
-    return StreamingResponse(_chat_events(st, session_id, body.message), media_type="text/event-stream",
+    slot = st.slots.acquire()  # global ceiling on concurrent model work (protects the shared token budget)
+    if slot is None:
+        st.gate.release(session_id)
+        raise AppError("the server is busy handling other requests; please retry in a moment")
+    return StreamingResponse(_chat_events(st, session_id, body.message, slot), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
-def _chat_events(st, session_id: str, message: str) -> Iterator[str]:
+def _chat_events(st, session_id: str, message: str, slot: int) -> Iterator[str]:
     try:
         with st.db.session() as db:
             history = store.recent_history(db, session_id)
@@ -157,6 +180,7 @@ def _chat_events(st, session_id: str, message: str) -> Iterator[str]:
         yield _sse("error", {"code": "internal_error", "message": "Something went wrong while processing your message."})
     finally:
         st.gate.release(session_id)
+        st.slots.release(slot)
 
 
 # ------------------------------------------------------------------ downloads
@@ -166,7 +190,9 @@ def _download(path, name: str):
 
 
 @router.get("/sessions/{session_id}/artifacts/{artifact_id}/versions/{version}/download")
-def download_artifact(session_id: str, artifact_id: str, version: int, request: Request, db: Session = Depends(db_dep)):
+def download_artifact(session_id: str, artifact_id: str, version: int, request: Request, db: Session = Depends(db_dep),
+                      owner: str = Depends(owner_dep)):
+    store.get_session(db, session_id, owner)
     a, v = store.get_artifact_version(db, session_id, artifact_id, version)
     p = request.app.state.storage.resolve(v.stored_path)
     if not p.exists():
@@ -175,7 +201,9 @@ def download_artifact(session_id: str, artifact_id: str, version: int, request: 
 
 
 @router.get("/sessions/{session_id}/files/{file_id}/download")
-def download_upload(session_id: str, file_id: str, request: Request, db: Session = Depends(db_dep)):
+def download_upload(session_id: str, file_id: str, request: Request, db: Session = Depends(db_dep),
+                    owner: str = Depends(owner_dep)):
+    store.get_session(db, session_id, owner)
     f = store.get_file(db, session_id, file_id)
     p = request.app.state.storage.resolve(f.stored_path)
     if not p.exists():

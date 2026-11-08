@@ -79,7 +79,7 @@ def _show(v) -> str:
 
 
 def _sheet(ws) -> dict:
-    cells = Counter(); fills = Counter(); fmts = Counter(); fonts = Counter(); bordered = 0
+    fills = Counter(); fmts = Counter(); fonts = Counter(); bordered = 0
     header = None
     n = 0
     preview, last_data_row = [], 0

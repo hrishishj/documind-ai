@@ -3,7 +3,6 @@ from datetime import datetime
 
 import pytest
 from openpyxl import Workbook, load_workbook
-from openpyxl.chart import BarChart, Reference
 
 from app.core.config import REPO_ROOT
 from app.document_engine.plan import EditPlan, PlanError

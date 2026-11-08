@@ -6,7 +6,6 @@
 
 Uses the live LLM, so it consumes a few thousand Groq tokens.
 """
-import io
 import sys
 import tempfile
 from pathlib import Path
@@ -73,7 +72,12 @@ def main():
         dl.value.save_as(v1)
         d1 = Document(str(v1))
         assert d1.paragraphs[0].text == "FY2025 Annual Report", d1.paragraphs[0].text
-        assert [c.text for c in d1.tables[0].rows[-1].cells] == ["West", "5", "6"], [c.text for c in d1.tables[0].rows[-1].cells]
+        # The user gave no position, so the model may add the row at the end OR above the totals row; both are fine.
+        # What must hold: the row exists with exactly these values, and the original rows are all still there.
+        rows = [[c.text for c in r.cells] for r in d1.tables[0].rows]
+        assert ["West", "5", "6"] in rows, rows
+        assert len(rows) == 4 and rows[0] == ["Region", "Q1", "Q2"] and rows[1][0] == "North", rows
+        assert any(r[0] == "Merged total" for r in rows), rows
 
         # --- follow-up edit => version 2 of the same document
         box.fill("Now make the intro paragraph say 'Revised introduction'.")

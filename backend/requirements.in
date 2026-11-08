@@ -21,9 +21,9 @@ python-pptx
 openpyxl
 lxml
 pillow
-python-magic-bin
 pytest
-pytest-asyncio
 xlrd
 pymupdf
 playwright
+ruff
+pytest-cov
