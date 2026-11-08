@@ -1,0 +1,35 @@
+{
+  "format": "docx",
+  "summary": "Retitle, add an intro sentence, fix a cell, add a table row",
+  "ops": [
+    {
+      "op": "docx.replace_text",
+      "paragraph": 0,
+      "text": "Quarterly Report - Q3 FY2024"
+    },
+    {
+      "op": "docx.insert_paragraph",
+      "after": 1,
+      "like": 1,
+      "text": "Revenue grew in every region this quarter."
+    },
+    {
+      "op": "docx.set_cell",
+      "table": 0,
+      "row": 1,
+      "col": 1,
+      "text": "12"
+    },
+    {
+      "op": "docx.add_row",
+      "table": 0,
+      "values": [
+        "South",
+        "15",
+        "25"
+      ],
+      "like_row": 1,
+      "after_row": 1
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "format": "xlsx",
+  "summary": "Add a West row (style copied), correct North revenue, copy the sheet for Q2",
+  "ops": [
+    {
+      "op": "xlsx.append_row",
+      "sheet": "Report",
+      "values": [
+        "West",
+        410.75,
+        0.21,
+        "2024-04-02"
+      ]
+    },
+    {
+      "op": "xlsx.set_cell",
+      "sheet": "Report",
+      "cell": "B4",
+      "value": 1500
+    },
+    {
+      "op": "xlsx.copy_sheet",
+      "sheet": "Report",
+      "new_name": "Report Q2"
+    }
+  ]
+}

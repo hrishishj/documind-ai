@@ -1,0 +1,5 @@
+DOCX. P<n> = top-level paragraph n (0-based). T<n> = table n; row/col are 0-based, col = cell position in the row.
+P0 [Heading 1] Quarterly Report
+P1 [Normal] Intro paragraph in Georgia. Bold red run.
+P2 [Heading 2] Details
+T0: 3x3 Region | Q1 | Q2 / North | 10 | 20 / Merged total | 30

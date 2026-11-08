@@ -1,0 +1,17 @@
+XLSX. Address cells like A1. append_row adds below the last data row and copies its style.
+Sheet 'Report' range A1:D7 last_data_row=7 tables: Sales A3:D7 merged: A1:D1
+  A1=Quarterly Sales
+  A3=Region | B3=Revenue | C3=Margin | D3=Date
+  A4=North | B4=1500 | C4=0.123 | D4=2024-01-15 00:00:00
+  A5=South | B5=99 | C5=0.5 | D5=2024-02-01 00:00:00
+  A6=East | B6=250.25 | C6=0.08 | D6=2024-03-09 00:00:00
+  A7=West | B7=410.75 | C7=0.21 | D7=2024-04-02 00:00:00
+Sheet 'Hidden' range A1:A1 last_data_row=1 state=hidden
+  A1=x
+Sheet 'Report Q2' range A1:D7 last_data_row=7 merged: A1:D1
+  A1=Quarterly Sales
+  A3=Region | B3=Revenue | C3=Margin | D3=Date
+  A4=North | B4=1500 | C4=0.123 | D4=2024-01-15 00:00:00
+  A5=South | B5=99 | C5=0.5 | D5=2024-02-01 00:00:00
+  A6=East | B6=250.25 | C6=0.08 | D6=2024-03-09 00:00:00
+  A7=West | B7=410.75 | C7=0.21 | D7=2024-04-02 00:00:00

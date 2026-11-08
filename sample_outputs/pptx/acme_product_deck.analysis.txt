@@ -1,0 +1,14 @@
+PPTX. Slide numbers are 1-based. Shapes are addressed by name, or 'idx:N' for placeholders. Size 13.333x7.5 in.
+Layouts: "Title Slide" (idx0 CENTER_TITLE, idx1 SUBTITLE); "Title and Content" (idx0 TITLE, idx1 OBJECT); "Section Header" (idx0 TITLE, idx1 BODY); "Two Content" (idx0 TITLE, idx1 OBJECT, idx2 OBJECT); "Comparison" (idx0 TITLE, idx1 BODY, idx2 OBJECT, idx3 BODY, idx4 OBJECT); "Title Only" (idx0 TITLE); "Blank" (); "Content with Caption" (idx0 TITLE, idx1 OBJECT, idx2 BODY); "Picture with Caption" (idx0 TITLE, idx1 PICTURE, idx2 BODY); "Title and Vertical Text" (idx0 TITLE, idx1 BODY); "Vertical Title and Text" (idx0 TITLE, idx1 BODY)
+S1 [Title Slide] title='Annual Review'
+  - 'Title 1' placeholder idx:0: 'Annual Review'
+  - 'Subtitle 2' placeholder idx:1: 'FY2024'
+S2 [Title and Content] title='Highlights'
+  - 'Title 1' placeholder idx:0: 'Highlights'
+  - 'Content Placeholder 2' placeholder idx:1: 'Revenue up 12%'
+  - 'Table 3' table table 3x2 header=['Metric', 'Value']
+  - 'Picture 4' picture
+S3 [Title Only] title='Chart'
+  - 'Title 1' placeholder idx:0: 'Chart'
+  - 'TextBox 2' text_box: 'Styled text'
+  - 'Chart 3' chart chart(barChart)
