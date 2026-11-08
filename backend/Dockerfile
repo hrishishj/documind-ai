@@ -11,7 +11,8 @@ RUN pip install "$(grep -i '^torch==' requirements.txt)" --index-url https://dow
  && pip install -r requirements.txt
 
 COPY backend ./backend
-RUN mkdir -p /srv/backend/storage && useradd -m app && chown -R app /srv /models 2>/dev/null || true
+# /models (embedding cache) and storage must exist and belong to the app user BEFORE volumes are mounted on them
+RUN useradd -m app && mkdir -p /srv/backend/storage /models && chown -R app:app /srv/backend/storage /models
 USER app
 WORKDIR /srv/backend
 EXPOSE 8000

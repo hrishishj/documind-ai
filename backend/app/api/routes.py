@@ -85,12 +85,14 @@ def get_session(session_id: str, db: Session = Depends(db_dep), owner: str = Dep
 def delete_session(session_id: str, request: Request, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
     store.get_session(db, session_id, owner)  # 404 before anything is touched
     st = request.app.state
+    # Database rows first, vectors second. A background indexing job that is still running re-checks that its file
+    # exists once it has written vectors; with this order every interleaving ends with the namespace removed.
+    store.delete_session(db, st.storage, session_id, owner)
     if st.indexer is not None:
         try:
             st.indexer.store.delete_namespace(session_id)  # the conversation's searchable passages go with it
         except Exception:  # noqa: BLE001 - never block deleting the user's data because the vector service is down
             log.exception("could not delete vector namespace for %s", session_id)
-    store.delete_session(db, st.storage, session_id, owner)
 
 
 def index_job(st, session_id: str, file_id: str, name: str, path) -> None:
@@ -104,7 +106,12 @@ def index_job(st, session_id: str, file_id: str, name: str, path) -> None:
         log.exception("indexing failed for %s", file_id)
         n, status, err = 0, "failed", f"{type(e).__name__}: {str(e)[:200]}"
     with st.db.session() as db:
-        store.set_index_status(db, file_id, status, err, n)
+        still_there = store.set_index_status(db, file_id, status, err, n)
+    if not still_there:  # the conversation was deleted while we were indexing: do not leave orphan vectors behind
+        try:
+            st.indexer.store.delete_namespace(session_id)
+        except Exception:  # noqa: BLE001
+            log.exception("could not remove orphan vectors for %s", session_id)
 
 
 # ------------------------------------------------------------------ files

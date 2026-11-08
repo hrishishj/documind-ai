@@ -12,7 +12,7 @@ conversational artifact editing; secure files; docs, README, requirements.txt, s
 |---|---|
 | LLM | Groq (via `langchain-groq`), behind a provider interface |
 | Embeddings | Local `sentence-transformers` (BAAI/bge-small-en-v1.5, 384-d) |
-| Web search | Tavily; DuckDuckGo fallback when no key |
+| Web search | Tavily; keyless ddgs meta-search (bing/google) fallback when no key or on failure |
 | Relational DB | PostgreSQL 16 (+ LangGraph Postgres checkpointer) |
 | Vector DB | Pinecone (namespace per session) |
 | Frontend | React + TypeScript (Vite) |
@@ -25,7 +25,7 @@ conversational artifact editing; secure files; docs, README, requirements.txt, s
 
 ## LangGraph
 `route_intent → document_understanding → retrieve_context → plan_content → generate_content →
-validate (retry ≤2) → render_file → verify_output → respond(with citations)`
+validate (retry ≤3) → render_file → verify_output → respond(with citations)`
 
 ## Phases
 0 Foundation · 1 Sessions/chat/uploads · 2 Template analysis · 3 Render engine ·

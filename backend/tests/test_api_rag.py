@@ -69,6 +69,25 @@ def test_deleting_the_conversation_deletes_its_vectors(test_database, tmp_path, 
         assert idx.store.count(a) == 0 and idx.store.count(b) > 0   # the other conversation is untouched
 
 
+def test_deleting_during_indexing_leaves_no_orphan_vectors(test_database, tmp_path, docx_bytes):
+    """Race found by a live Docker test: delete lands mid-indexing, then the job writes its vectors."""
+    idx = fake_indexer()
+    original = idx.index_file
+    with make_client(test_database, tmp_path, indexer=idx) as c:
+        def delete_then_write(session_id, file_id, name, path):
+            kept = tmp_path / "kept.docx"
+            kept.write_bytes(path.read_bytes())                             # deleting the conversation removes the upload
+            assert c.delete(f"/sessions/{session_id}").status_code == 204   # the user deletes mid-indexing
+            n = original(session_id, file_id, name, kept)                   # ...and the job still writes vectors
+            assert idx.store.count(session_id) > 0                          # (precondition: they really were written)
+            return n
+        idx.index_file = delete_then_write
+        sid = new_session(c)
+        upload(c, sid, "r.docx", docx_bytes)
+        assert c.get(f"/sessions/{sid}").status_code == 404
+        assert idx.store.count(sid) == 0
+
+
 def test_indexing_failure_is_reported_but_the_upload_still_works(test_database, tmp_path, docx_bytes):
     idx = fake_indexer()
 
