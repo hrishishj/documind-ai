@@ -41,6 +41,63 @@ def _make_floating(run, x_emu: int, y_emu: int) -> None:
     drawing.replace(inline, anchor)
 
 
+def build_xlsx(path: Path) -> dict:
+    """XLSX with known formatting; returns the ground truth."""
+    from datetime import date
+
+    from openpyxl import Workbook
+    from openpyxl.drawing.image import Image as XlImage
+    from openpyxl.formatting.rule import CellIsRule
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.worksheet.datavalidation import DataValidation
+    from openpyxl.worksheet.table import Table, TableStyleInfo
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Report"
+    ws.sheet_properties.tabColor = "FF6600"
+    ws["A1"] = "Quarterly Sales"
+    ws.merge_cells("A1:D1")
+    ws["A1"].font = Font(name="Calibri", size=18, bold=True, color="1F4E79")
+    ws["A1"].alignment = Alignment(horizontal="center")
+    for i, h in enumerate(["Region", "Revenue", "Margin", "Date"], 1):
+        c = ws.cell(row=3, column=i, value=h)
+        c.font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="1F4E79")
+        c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        c.border = Border(bottom=Side(style="medium", color="000000"))
+    rows = [("North", 1234.5, 0.123, date(2024, 1, 15)), ("South", 99.0, 0.5, date(2024, 2, 1)), ("East", 250.25, 0.08, date(2024, 3, 9))]
+    for r, row in enumerate(rows, 4):
+        for ci, v in enumerate(row, 1):
+            ws.cell(row=r, column=ci, value=v)
+        ws.cell(row=r, column=2).number_format = "#,##0.00"
+        ws.cell(row=r, column=3).number_format = "0.0%"
+        ws.cell(row=r, column=4).number_format = "yyyy-mm-dd"
+    ws.column_dimensions["A"].width = 24
+    ws.column_dimensions["B"].width = 14
+    ws.row_dimensions[3].height = 28
+    ws.freeze_panes = "A4"
+    ws.conditional_formatting.add("B4:B6", CellIsRule(operator="greaterThan", formula=["100"], fill=PatternFill("solid", bgColor="FFC7CE")))
+    dv = DataValidation(type="list", formula1='"North,South,East,West"', allow_blank=True)
+    ws.add_data_validation(dv)
+    dv.add("A4:A6")
+    t = Table(displayName="Sales", ref="A3:D6")
+    t.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showRowStripes=True)
+    ws.add_table(t)
+    img = XlImage(BytesIO(png_bytes((20, 160, 60), (96, 48))))
+    ws.add_image(img, "F2")
+    ws.page_setup.orientation = "landscape"
+    ws.oddFooter.center.text = "Confidential"
+    ws2 = wb.create_sheet("Hidden")
+    ws2.sheet_state = "hidden"
+    ws2["A1"] = "x"
+    wb.save(path)
+    return {"title_font": ("Calibri", 18.0, "1F4E79"), "header_fill": "1F4E79", "header_font": ("Arial", 11.0),
+            "merged": "A1:D1", "col_widths": {"A": 24.0, "B": 14.0}, "row3_height": 28.0, "freeze": "A4",
+            "tab": "FF6600", "image_from": "F2", "table": ("Sales", "A3:D6"), "orientation": "landscape",
+            "formats": {"#,##0.00", "0.0%", "yyyy-mm-dd"}}
+
+
 def build_docx(path: Path) -> dict:
     """Create a DOCX with known formatting; returns the ground-truth values used."""
     doc = Document()

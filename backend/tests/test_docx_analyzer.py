@@ -84,6 +84,32 @@ def test_theme_colors_are_all_hex(built):
     assert all(re.fullmatch(r"[0-9A-Fa-f]{6}", v or "") for v in colors.values()), colors
 
 
+def test_census_reports_direct_formatting(built):
+    # the fixture's red bold run is direct formatting inside a Georgia-styled paragraph
+    c = built[0]["formatting_census"]
+    assert c["bold_share"] > 0
+    assert any(x["value"] == "C00000" for x in c["colors"])
+    assert {x["value"] for x in c["fonts"]} >= {"Georgia"}
+
+
+def test_first_section_without_header_is_marked_absent():
+    from docx import Document
+    import io
+    from app.document_engine.docx.analyzer import analyze_docx as an
+    buf = io.BytesIO()
+    Document().save(buf)
+    buf.seek(0)
+    s = an(buf)["sections"][0]
+    assert s["header"] == {"present": False} and s["footer"] == {"present": False}
+
+
+def test_summary_is_small_and_json(built):
+    from app.document_engine.summary import summary_json
+    out = summary_json(built[0])
+    assert len(out) < 30_000
+    json.loads(out)
+
+
 def test_body_order_preserved(built):
     prof, _ = built
     kinds = [b["type"] for b in prof["body"]]

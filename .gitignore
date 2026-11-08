@@ -46,3 +46,5 @@ htmlcov/
 # Local databases
 *.db
 *.sqlite3
+# Local copy of the user's original sample drop (tracked copies live in sample_templates/)
+sample docx,ppt,xls/
