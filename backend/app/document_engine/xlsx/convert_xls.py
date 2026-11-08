@@ -34,7 +34,9 @@ def style_parts(book: xlrd.Book, xf_index: int) -> dict:
     """Translate one xls XF record into openpyxl style objects (also used by the audit test)."""
     xf = book.xf_list[xf_index]
     f = book.font_list[xf.font_index]
-    font = Font(name=f.name, size=f.height / 20.0, bold=bool(f.bold), italic=bool(f.italic),
+    # Modern writers set font *weight* (700 = bold) and often leave xlrd's legacy `bold` bit unset;
+    # Excel itself goes by weight, so `f.bold` alone silently drops bold from real files.
+    font = Font(name=f.name, size=f.height / 20.0, bold=bool(f.bold) or f.weight >= 700, italic=bool(f.italic),
                 underline=UNDERLINE.get(f.underline_type), strike=bool(f.struck_out),
                 color=rgb_of(book, f.colour_index))
     bg = xf.background

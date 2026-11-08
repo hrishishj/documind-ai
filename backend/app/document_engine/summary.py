@@ -57,8 +57,50 @@ def summarize_xlsx(p: dict) -> dict:
     }
 
 
+MAX_SLIDES_DETAIL = 25
+MAX_LAYOUTS = 20
+
+
+def _brief_shape(s: dict) -> dict:
+    keep = ("name", "kind", "placeholder", "x_in", "y_in", "w_in", "h_in", "run_format")
+    out = {k: s[k] for k in keep if k in s}
+    if "text" in s:
+        out["text"] = s["text"][:60]
+    if "table" in s:
+        out["table"] = {k: s["table"][k] for k in ("rows", "cols", "header_row_text", "first_row_flag") if k in s["table"]}
+    if "chart" in s:
+        out["chart"] = s["chart"]
+    if "image" in s:
+        out["image"] = {"content_type": s["image"].get("content_type"), "sha256": s["image"].get("sha256", "")[:12]}
+    return out
+
+
+def summarize_pptx(p: dict) -> dict:
+    masters = []
+    for m in p["masters"]:
+        masters.append({
+            "theme": m["theme"], "text_styles": m["text_styles"], "background": m.get("background"),
+            "placeholders": [_brief_shape(s) for s in m["placeholders"]],
+            "decor": [_brief_shape(s) for s in m["decor"]],
+            "layouts": [{"name": l["name"], "used_by_slides": l["used_by_slides"],
+                         "placeholders": [{"type": s["placeholder"]["type"], "idx": s["placeholder"]["idx"],
+                                           **{k: s[k] for k in ("x_in", "y_in", "w_in", "h_in") if k in s}}
+                                          for s in l["placeholders"]],
+                         "decor": [_brief_shape(s) for s in l["decor"]]} for l in m["layouts"][:MAX_LAYOUTS]],
+            "layouts_total": len(m["layouts"])})
+    slides = [{"index": s["index"], "layout": s["layout"], "title": s.get("title"),
+               "background_override": s.get("background_override"), "has_notes": s.get("has_notes"),
+               "shapes": [_brief_shape(x) for x in s["shapes"][:12]], "shape_count": s["shape_count"]}
+              for s in p["slides"][:MAX_SLIDES_DETAIL]]
+    return {"format": "pptx", "slide_size": p["slide_size"], "counts": p["counts"], "masters": masters,
+            "slides": slides, "slides_omitted": max(0, len(p["slides"]) - MAX_SLIDES_DETAIL),
+            "formatting_census": p["formatting_census"], "package_parts": p["package_parts"], "warnings": p["warnings"]}
+
+
 def summarize_profile(profile: dict) -> dict:
     fmt = profile.get("format")
+    if fmt == "pptx":
+        return summarize_pptx(profile)
     if fmt == "docx":
         return summarize_docx(profile)
     if fmt == "xlsx":
