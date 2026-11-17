@@ -44,3 +44,12 @@ def test_database():
     Base.metadata.create_all(db.engine)
     yield db
     db.dispose()
+
+
+@pytest.fixture()
+def docx_bytes(tmp_path):
+    """A small real DOCX (title, intro, table) for API tests that upload a file."""
+    from app.document_engine.samples import build_docx
+    p = tmp_path / "r.docx"
+    build_docx(p)
+    return p.read_bytes()

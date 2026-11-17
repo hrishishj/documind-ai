@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -148,3 +148,21 @@ class Citation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     message: Mapped[Message] = relationship(back_populates="citations")
+
+
+class RunRecord(Base):
+    """One chat turn's trace: per-node / per-LLM-call / per-tool-call spans plus token and cost totals.
+    Metadata only (no message or document text)."""
+
+    __tablename__ = "run_traces"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey("chat_sessions.id", ondelete="CASCADE"), index=True)
+    intent: Mapped[str] = mapped_column(String(20), default="", server_default="")
+    status: Mapped[str] = mapped_column(String(12), default="ok", server_default="ok")  # ok | error | gave_up
+    duration_ms: Mapped[float] = mapped_column(Float, default=0.0)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0, server_default="0")
+    trace: Mapped[dict] = mapped_column(JsonType, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

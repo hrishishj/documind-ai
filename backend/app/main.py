@@ -3,11 +3,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from app.api.routes import router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.database.session import Database
+from app.observability.metrics import Metrics
+from app.observability.trace import current
 from app.document_engine.docx.analyzer import analyze_docx
 from app.document_engine.pptx.analyzer import analyze_pptx
 from app.document_engine.xlsx.analyzer import analyze_spreadsheet
@@ -35,19 +38,37 @@ def _default_indexer(settings: Settings):
 _UNSET = object()
 
 
+def _install_run_id_logging() -> None:
+    """Stamp every log line with the id of the chat turn it belongs to ('-' outside a turn), so a trace and the
+    server log can be joined."""
+    old = logging.getLogRecordFactory()
+    if getattr(old, "_documind", False):
+        return
+
+    def factory(*a, **kw):
+        rec = old(*a, **kw)
+        t = current()
+        rec.run_id = t.run_id[:8] if t else "-"
+        return rec
+    factory._documind = True
+    logging.setLogRecordFactory(factory)
+
+
 def create_app(settings: Settings | None = None, llm=None, checkpointer=None, database: Database | None = None,
                indexer=_UNSET, web=_UNSET) -> FastAPI:
     """Build the app. Collaborators can be injected (tests pass a fake LLM, in-memory checkpointer, test DB and indexer).
     `indexer=None` explicitly disables document search; leaving it unset builds the real one from the settings."""
     settings = settings or get_settings()
+    _install_run_id_logging()
     logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO,
-                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+                        format="%(asctime)s %(levelname)s [%(run_id)s] %(name)s: %(message)s")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         st = app.state
         st.settings, st.gate = settings, SessionGate()
         st.slots = SlotLimiter(settings.max_concurrent_chats)
+        st.metrics = Metrics()
         st.db = database or Database(settings.sqlalchemy_url)
         st.storage = LocalStorage(settings.storage_path)
         st.analyzers = {"docx": analyze_docx, "pptx": analyze_pptx, "xlsx": analyze_spreadsheet}
@@ -93,6 +114,10 @@ def create_app(settings: Settings | None = None, llm=None, checkpointer=None, da
         return {"status": "ok", "app": settings.app_name, "env": settings.app_env,
                 "chat_enabled": bool(getattr(app.state, "graph", None)),
                 "retrieval": None if idx is None else type(idx.store).__name__.replace("Store", "").lower()}
+
+    @app.get("/metrics", response_class=PlainTextResponse)
+    def metrics() -> str:
+        return app.state.metrics.render()
 
     return app
 

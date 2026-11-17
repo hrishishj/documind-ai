@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError, ExternalServiceError, NotFoundError
+from app.observability.trace import RunTrace, use_trace
 from app.schemas.api import (ArtifactOut, ChatIn, FileOut, MessageOut, SessionCreate, SessionDetail, SessionOut, UploadOut)
 from app.services import chat_store as store
 from app.services.uploads import validate_upload
@@ -182,17 +183,47 @@ def chat(session_id: str, body: ChatIn, request: Request, owner: str = Depends(o
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+def _status_of(state: dict) -> str:
+    if state.get("error"):
+        return "error"
+    if state.get("intent") == "edit" and not state.get("artifact") and not state.get("declined"):
+        return "gave_up"
+    return "ok"
+
+
+def _finish_run(st, trace: RunTrace, session_id: str, state: dict, started: float) -> dict:
+    """Persist the trace and update the metrics. Observability must never break a chat turn, so failures are logged only."""
+    import time
+    data = trace.to_dict((time.perf_counter() - started) * 1000)
+    status = _status_of(state)
+    try:
+        st.metrics.observe_run(state.get("intent") or "", status, data["duration_ms"], data)
+        with st.db.session() as db:
+            store.save_run(db, data, session_id, state.get("intent") or "", status)
+    except Exception:  # noqa: BLE001
+        log.exception("could not record run trace %s", trace.run_id)
+    return data
+
+
 def _chat_events(st, session_id: str, message: str, slot: int) -> Iterator[str]:
+    import time
+    trace, started, state = RunTrace(session_id), time.perf_counter(), {}
     try:
         with st.db.session() as db:
             history = store.recent_history(db, session_id)
             store.add_message(db, session_id, "user", message)
             files = store.file_refs(db, session_id)
-        yield _sse("start", {"session_id": session_id})
-        state: dict = {}
+        yield _sse("start", {"session_id": session_id, "run_id": trace.run_id})
         cfg = {"configurable": {"thread_id": session_id}}
-        for chunk in st.graph.stream({"session_id": session_id, "user_message": message, "history": history, "files": files},
-                                     cfg, stream_mode="updates"):
+        stream = iter(st.graph.stream({"session_id": session_id, "user_message": message, "history": history, "files": files},
+                                      cfg, stream_mode="updates"))
+        while True:
+            # Re-activate the trace around every step: a streamed response resumes in a fresh context each time,
+            # so a ContextVar set once would be lost after the first yield.
+            with use_trace(trace):
+                chunk = next(stream, None)
+            if chunk is None:
+                break
             for node, upd in chunk.items():
                 state.update(upd or {})
                 yield _sse("node", {"node": node, "label": NODE_LABELS.get(node, node)})
@@ -211,19 +242,40 @@ def _chat_events(st, session_id: str, message: str, slot: int) -> Iterator[str]:
             citations = state.get("citations") or []
             if citations:
                 store.add_citations(db, msg_id, citations)
-        yield _sse("final", {"message_id": msg_id, "content": response, "meta": meta, "intent": state.get("intent"),
+        _finish_run(st, trace, session_id, state, started)
+        yield _sse("final", {"message_id": msg_id, "run_id": trace.run_id, "content": response, "meta": meta, "intent": state.get("intent"),
                              "citations": [{"ref": c["n"], "title": c["title"] if c.get("kind") == "web" else c["file_name"],
                                             "locator": c["locator"], "snippet": c["snippet"], "file_id": c["file_id"] or None,
                                             "source_type": c.get("kind", "document"), "url": c.get("url") or None}
                                            for c in citations]})
     except AppError as e:
-        yield _sse("error", {"code": e.code, "message": e.message})
+        _finish_run(st, trace, session_id, {**state, "error": e.message}, started)
+        yield _sse("error", {"code": e.code, "message": e.message, "run_id": trace.run_id})
     except Exception:  # noqa: BLE001
         log.exception("chat failed")
-        yield _sse("error", {"code": "internal_error", "message": "Something went wrong while processing your message."})
+        _finish_run(st, trace, session_id, {**state, "error": "internal_error"}, started)
+        yield _sse("error", {"code": "internal_error", "message": "Something went wrong while processing your message.", "run_id": trace.run_id})
     finally:
         st.gate.release(session_id)
         st.slots.release(slot)
+
+
+# ------------------------------------------------------------------ traces
+@router.get("/sessions/{session_id}/runs")
+def list_runs(session_id: str, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    """Summaries of this conversation's chat turns (latency, tokens, cost, outcome), newest first."""
+    store.get_session(db, session_id, owner)
+    return [{"run_id": r.id, "created_at": r.created_at, "intent": r.intent, "status": r.status,
+             "duration_ms": r.duration_ms, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens,
+             "cost_usd": r.cost_usd} for r in store.list_runs(db, session_id)]
+
+
+@router.get("/sessions/{session_id}/runs/{run_id}")
+def get_run(session_id: str, run_id: str, db: Session = Depends(db_dep), owner: str = Depends(owner_dep)):
+    """The full span tree of one turn: nodes, LLM calls (with retries), tool calls, durations and failures."""
+    store.get_session(db, session_id, owner)
+    r = store.get_run(db, session_id, run_id)
+    return {**r.trace, "intent": r.intent, "status": r.status, "created_at": r.created_at}
 
 
 # ------------------------------------------------------------------ downloads

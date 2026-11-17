@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.core.errors import ExternalServiceError
+from app.observability.trace import span
 
 log = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
@@ -127,10 +128,16 @@ class GroqLLM:
     def _call(self, make_runner, system, user, history, max_tokens):
         need = est_tokens(system, user, *[h[1] for h in (history or [])]) + max_tokens
         for attempt in range(self.retries + 1):
-            self.governor.acquire(need)
+            waited = self.governor.acquire(need)
             try:
-                result = make_runner().invoke(self._messages(system, user, history))
-                raw = result.get("raw") if isinstance(result, dict) else result
+                with span("llm.invoke", "llm", model=getattr(self, "_kw", {}).get("model"), attempt=attempt, est_tokens=need,
+                          rate_wait_s=round(waited, 2) if waited else None) as sp:
+                    result = make_runner().invoke(self._messages(system, user, history))
+                    raw = result.get("raw") if isinstance(result, dict) else result
+                    um = getattr(raw, "usage_metadata", None) or {}
+                    sp.set(input_tokens=um.get("input_tokens"), output_tokens=um.get("output_tokens"))
+                    if isinstance(result, dict) and result.get("parsed") is None:
+                        sp.fail("output did not match the schema")  # reachable, but unusable: a content failure
                 actual = self._actual_tokens(raw)
                 if actual is not None:
                     self.governor.settle(need, actual)
@@ -139,7 +146,12 @@ class GroqLLM:
                 if "tool_use_failed" in str(e) or "did not call a tool" in str(e):
                     # The model answered in prose instead of the required structured form. That is a content problem
                     # (callers retry with feedback), not an outage; reporting it as "unreachable" would be false.
-                    raise StructuredOutputError(f"the model did not return structured output: {str(e)[:160]}") from e
+                    log.warning("structured output rejected by the API: %s", str(e)[:300])  # raw detail: log/trace only, never the user
+                    # The model did run (and is billed for its prompt and some output), but the call reports no usage.
+                    # Keeping the full max_tokens reservation would stall the retry for ~50 s, so charge prompt + a margin.
+                    self.governor.settle(need, max(0, need - max_tokens) + 300)
+                    raise StructuredOutputError("the model did not return structured output (it replied in prose or "
+                                                "called a tool that does not exist)") from e
                 if attempt == self.retries or not _is_retryable(e):
                     raise ExternalServiceError(f"LLM call failed: {type(e).__name__}: {str(e)[:200]}") from e
                 wait = _retry_after(e)
@@ -169,7 +181,3 @@ class GroqLLM:
     def text(self, system, user, history=None, max_tokens=None):
         mt = max_tokens or TEXT_MAX_TOKENS
         return self._call(lambda: self._ChatGroq(max_tokens=mt, **self._kw), system, user, history, mt).content
-
-
-def get_llm() -> LLM:
-    return GroqLLM()

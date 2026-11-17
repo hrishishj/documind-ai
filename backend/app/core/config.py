@@ -21,6 +21,10 @@ class Settings(BaseSettings):
 
     groq_api_key: str = ""
     groq_model: str = "openai/gpt-oss-120b"
+    # List price in USD per 1M tokens for the configured model (Groq console, checked 2026-11-17). Used only to
+    # estimate cost in traces/metrics; change it together with GROQ_MODEL.
+    price_input_per_mtok: float = 0.15
+    price_output_per_mtok: float = 0.60
 
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dim: int = 384
@@ -35,6 +39,8 @@ class Settings(BaseSettings):
     max_files_per_session: int = 20
     max_session_mb: int = 200
     max_concurrent_chats: int = 4
+    # Hard deadline (seconds) for each call to web search or the vector store, so a hung dependency cannot pin a request.
+    tool_timeout_s: float = 30.0
 
     cors_origins: str = "http://localhost:5173"
     # None = secure cookie only in production. Set false when serving plain http (e.g. docker compose

@@ -140,3 +140,26 @@ def get_artifact_version(db: Session, session_id: str, artifact_id: str, version
     if v is None:
         raise NotFoundError(f"version {version} not found")
     return a, v
+
+
+# ------------------------------------------------------------------ run traces
+def save_run(db: Session, trace: dict, session_id: str, intent: str, status: str) -> None:
+    from app.database.models import RunRecord
+    db.add(RunRecord(id=trace["run_id"], session_id=session_id, intent=intent or "", status=status,
+                     duration_ms=trace["duration_ms"], input_tokens=trace["input_tokens"],
+                     output_tokens=trace["output_tokens"], cost_usd=trace["cost_usd"], trace=trace))
+    db.commit()
+
+
+def list_runs(db: Session, session_id: str, limit: int = 50):
+    from app.database.models import RunRecord
+    return list(db.scalars(select(RunRecord).where(RunRecord.session_id == session_id)
+                           .order_by(RunRecord.created_at.desc()).limit(limit)))
+
+
+def get_run(db: Session, session_id: str, run_id: str):
+    from app.database.models import RunRecord
+    r = db.get(RunRecord, run_id)
+    if r is None or r.session_id != session_id:
+        raise NotFoundError("run not found")
+    return r

@@ -98,7 +98,7 @@ class TavilySearch:
         self.depth = depth
 
     def search(self, query: str, max_results: int = 5) -> list[WebResult]:
-        r = self._c.search(clean_query(query), max_results=max_results + 3, search_depth=self.depth)  # extra: some are filtered out
+        r = self._c.search(clean_query(query), max_results=max_results + 3, search_depth=self.depth, timeout=15)  # extra: some are filtered out
         raw = [WebResult(x.get("title", ""), x.get("url", ""), x.get("content", ""), float(x.get("score") or 0), "tavily")
                for x in r.get("results", [])]
         return normalise(raw, max_results)

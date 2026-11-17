@@ -18,7 +18,9 @@ from pydantic import ValidationError
 from app.agents.planner import make_plan
 from app.agents.prompts import CHAT_SYSTEM
 from app.agents.router import describe_files, route
+from app.core.config import get_settings
 from app.core.errors import ExternalServiceError
+from app.core.timeouts import run_with_timeout
 from app.document_engine.docx.analyzer import analyze_docx
 from app.document_engine.plan import EditPlan, PlanError
 from app.document_engine.pptx.analyzer import analyze_pptx
@@ -26,6 +28,7 @@ from app.document_engine.render import apply_plan, detect_format, validate_plan
 from app.document_engine.planner_view import build_planner_view
 from app.document_engine.xlsx.analyzer import analyze_spreadsheet
 from app.llm.provider import LLM, StructuredOutputError
+from app.observability.trace import span, traced_node
 from app.rag.answer import (NOT_FOUND, QA_SYSTEM, TOP_K, GroundedAnswer, attribute_sources, evidence_snippet, format_sources,
                             normalize_text, relevant, verify_citations, web_to_sources)
 from app.rag.retrieve import Indexer
@@ -109,7 +112,10 @@ def build_graph(deps: Deps, checkpointer=None):
     def research_node(state: ChatState) -> dict:
         """Search the web for the user's request. A failure never aborts the turn: it is reported and the turn continues."""
         try:
-            results = deps.web.search(state["user_message"], max_results=5)
+            with span("web.search", "tool", engine=type(deps.web).__name__) as sp:
+                results = run_with_timeout(lambda: deps.web.search(state["user_message"], max_results=5),
+                                           get_settings().tool_timeout_s, "web search")
+                sp.set(results=len(results))
         except Exception as e:  # noqa: BLE001 - quota, network, all engines empty ...
             log.warning("web research failed: %s", str(e)[:200])
             return {"web_sources": [], "web_note": f"Web search was unavailable ({clean_text(str(e), 120)})"}
@@ -134,7 +140,10 @@ def build_graph(deps: Deps, checkpointer=None):
         if not any(f.get("index_status") == "ready" for f in uploads):
             return [], pending
         try:
-            found = deps.retriever.search(state["session_id"], state["user_message"], k=TOP_K)
+            with span("retrieval.search", "tool", store=type(deps.retriever.store).__name__) as sp:
+                found = run_with_timeout(lambda: deps.retriever.search(state["session_id"], state["user_message"], k=TOP_K),
+                                         get_settings().tool_timeout_s, "document search")
+                sp.set(hits=len(found))
         except Exception:  # noqa: BLE001
             log.exception("retrieval failed; falling back to plain chat")
             return [], pending
@@ -232,7 +241,9 @@ def build_graph(deps: Deps, checkpointer=None):
             msgs = [f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}" for err in e.errors()[:6]]
             return {"attempts": n, "plan": None, "plan_errors": ["schema violation: " + "; ".join(msgs)]}
         except StructuredOutputError as e:  # unparseable output: retry with the reason, don't abort
-            return {"attempts": n, "plan": None, "plan_errors": ["schema violation: " + e.message]}
+            return {"attempts": n, "plan": None, "plan_errors": [
+                "schema violation: " + e.message + ". Reply with a valid edit plan; if the request cannot be done with the "
+                "available operations, return an empty ops list and explain why in summary."]}
         except ExternalServiceError as e:
             return {"attempts": MAX_ATTEMPTS, "plan": None, "error": e.message,
                     "plan_errors": [e.message]}
@@ -314,8 +325,10 @@ def build_graph(deps: Deps, checkpointer=None):
         errs = state.get("plan_errors") or ["unknown problem"]
         if state.get("error"):
             return {"response": "I couldn't reach the language model just now. Please try again in a moment."}
+        # Validator messages ("paragraph 99 does not exist") help the user; raw model/API detail does not.
+        last = "my replies did not form a valid edit plan" if errs[0].startswith("schema violation") else errs[0]
         return {"response": "I wasn't able to produce a valid change for that request after "
-                            f"{state.get('attempts', 0)} attempts. Last problem: {errs[0]}. "
+                            f"{state.get('attempts', 0)} attempts. Last problem: {last}. "
                             "Could you rephrase it or point me at the exact slide, table or sheet?"}
 
     # ------------------------------------------------------------------ routing
@@ -344,7 +357,7 @@ def build_graph(deps: Deps, checkpointer=None):
     g = StateGraph(ChatState)
     for name, fn in (("route", route_node), ("research", research_node), ("chat", chat_node), ("understand", understand_node), ("plan", plan_node),
                      ("validate", validate_node), ("render", render_node), ("respond", respond_node), ("give_up", give_up_node)):
-        g.add_node(name, fn)
+        g.add_node(name, traced_node(name, fn))
     g.add_edge(START, "route")
     g.add_conditional_edges("route", after_route, {"understand": "understand", "chat": "chat", "research": "research", END: END})
     g.add_conditional_edges("research", after_research, {"understand": "understand", "chat": "chat"})
