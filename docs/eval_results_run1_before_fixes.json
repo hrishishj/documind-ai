@@ -1,0 +1,4199 @@
+{
+ "meta": {
+  "date": "2026-11-17",
+  "model": "openai/gpt-oss-120b",
+  "price_in": 0.15,
+  "price_out": 0.6
+ },
+ "summary": {
+  "cases": 30,
+  "task_success": {
+   "n": 30,
+   "pass": 29,
+   "rate": 0.967
+  },
+  "edit_task_success": {
+   "n": 23,
+   "pass": 23,
+   "rate": 1.0
+  },
+  "routing_accuracy": {
+   "n": 30,
+   "pass": 30,
+   "rate": 1.0
+  },
+  "edit_first_try_valid": {
+   "n": 23,
+   "pass": 23,
+   "rate": 1.0
+  },
+  "edit_eventually_valid": {
+   "n": 23,
+   "pass": 23,
+   "rate": 1.0
+  },
+  "edit_preservation": {
+   "n": 23,
+   "pass": 23,
+   "rate": 1.0
+  },
+  "edit_content_correct": {
+   "n": 23,
+   "pass": 23,
+   "rate": 1.0
+  },
+  "mean_attempts_when_edited": 1.0,
+  "latency_all": {
+   "n": 30,
+   "p50_s": 3.91,
+   "p95_s": 60.51,
+   "mean_s": 19.1,
+   "max_s": 78.66
+  },
+  "latency_by_expectation": {
+   "chat": {
+    "n": 3,
+    "p50_s": 2.19,
+    "p95_s": 78.66,
+    "mean_s": 27.58
+   },
+   "clarify": {
+    "n": 1,
+    "p50_s": 0.01,
+    "p95_s": 0.01,
+    "mean_s": 0.01
+   },
+   "clarify_or_edit": {
+    "n": 1,
+    "p50_s": 3.91,
+    "p95_s": 3.91,
+    "mean_s": 3.91
+   },
+   "edit": {
+    "n": 23,
+    "p50_s": 3.94,
+    "p95_s": 50.88,
+    "mean_s": 15.94
+   },
+   "no_edit": {
+    "n": 2,
+    "p50_s": 59.24,
+    "p95_s": 60.51,
+    "mean_s": 59.88
+   }
+  },
+  "tokens": {
+   "mean_input": 1238,
+   "mean_output": 106,
+   "total_input": 37153,
+   "total_output": 3195,
+   "mean_llm_calls": 1.2
+  },
+  "cost_usd": {
+   "total": 0.00749,
+   "mean_per_request": 0.00025,
+   "mean_per_edit": 0.00029
+  },
+  "llm_failures": 8,
+  "llm_retries": 2
+ },
+ "rows": [
+  {
+   "id": "docx-retitle",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Change the title to 'Quarterly Report - Q3 FY2024'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3337.6,
+   "input_tokens": 1479,
+   "output_tokens": 91,
+   "cost_usd": 0.000276,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nUpdated the main title paragraph.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.replace_text"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 93.0,
+    "plan": 2957.3,
+    "validate": 27.1,
+    "render": 228.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-insert-para",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Add a sentence after the intro paragraph: Revenue grew in every region this quarter.",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 2459.0,
+   "input_tokens": 1480,
+   "output_tokens": 103,
+   "cost_usd": 0.000284,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nInserted a new sentence after the intro paragraph.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.insert_paragraph"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 93.8,
+    "plan": 2071.0,
+    "validate": 30.9,
+    "render": 241.2,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-set-cell",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "In the table, set North's Q1 value to 12",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3001.6,
+   "input_tokens": 1477,
+   "output_tokens": 183,
+   "cost_usd": 0.000331,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nUpdated North's Q1 value to 12 in the table.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.set_cell"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 90.2,
+    "plan": 2615.0,
+    "validate": 29.3,
+    "render": 245.4,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-add-row",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Add a table row for South with 15 in Q1 and 25 in Q2",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3269.8,
+   "input_tokens": 1482,
+   "output_tokens": 230,
+   "cost_usd": 0.00036,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nAdded a row for South with Q1=15 and Q2=25 before the total row.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserve",
+   "plan_ops": [
+    "docx.add_row"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 95.0,
+    "plan": 2847.5,
+    "validate": 27.2,
+    "render": 245.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-delete-heading",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Delete the 'Details' heading",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 50398.6,
+   "input_tokens": 1470,
+   "output_tokens": 89,
+   "cost_usd": 0.000274,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nRemoved the 'Details' heading paragraph.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.delete_paragraph"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 82.8,
+    "plan": 49986.9,
+    "validate": 37.9,
+    "render": 264.0,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-replace-all",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Replace the word 'Quarterly' with 'Annual' everywhere",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3010.4,
+   "input_tokens": 1476,
+   "output_tokens": 90,
+   "cost_usd": 0.000275,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nReplaced 'Quarterly' with 'Annual' throughout the document.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.replace_all"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 108.3,
+    "plan": 2580.2,
+    "validate": 24.5,
+    "render": 264.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-append",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Add a closing paragraph at the end of the document saying: Thank you for reading.",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 2779.2,
+   "input_tokens": 1481,
+   "output_tokens": 102,
+   "cost_usd": 0.000283,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nAppended a closing paragraph at the end of the document.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.append_paragraph"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 108.6,
+    "plan": 2347.8,
+    "validate": 26.2,
+    "render": 246.1,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-total",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Change the merged total from 30 to 45",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3162.5,
+   "input_tokens": 1474,
+   "output_tokens": 225,
+   "cost_usd": 0.000356,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nUpdated the merged total value from 30 to 45.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.set_cell"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 115.4,
+    "plan": 2701.5,
+    "validate": 29.3,
+    "render": 269.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-rewrite-intro",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Rewrite the intro paragraph to say: Results are summarised below.",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 50485.3,
+   "input_tokens": 1477,
+   "output_tokens": 92,
+   "cost_usd": 0.000277,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nReplaced intro paragraph with new sentence.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.replace_text"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 106.6,
+    "plan": 50038.1,
+    "validate": 25.3,
+    "render": 291.0,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "docx-delete-row",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Remove the North row from the table",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3529.7,
+   "input_tokens": 1471,
+   "output_tokens": 116,
+   "cost_usd": 0.00029,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nDeleted the North row from the table.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.delete_row"
+   ],
+   "stages_ms": {
+    "route": 0.2,
+    "understand": 123.7,
+    "plan": 3093.0,
+    "validate": 24.6,
+    "render": 230.1,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-title",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Change the title slide title to 'Annual Review FY2025'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 5987.2,
+   "input_tokens": 1560,
+   "output_tokens": 129,
+   "cost_usd": 0.000311,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nUpdated the title on the title slide to 'Annual Review FY2025'.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.set_text"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 360.8,
+    "plan": 4793.1,
+    "validate": 23.4,
+    "render": 787.8,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-replace-all",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Replace FY2024 with FY2025 everywhere",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 51772.1,
+   "input_tokens": 1556,
+   "output_tokens": 92,
+   "cost_usd": 0.000289,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nReplaced FY2024 with FY2025 throughout the presentation.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.replace_all"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 396.9,
+    "plan": 50510.3,
+    "validate": 20.7,
+    "render": 825.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-add-slide",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Add a new slide titled 'Next steps' with the text 'Launch in Q2'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 4412.2,
+   "input_tokens": 1565,
+   "output_tokens": 135,
+   "cost_usd": 0.000316,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nAdded a Title Slide titled 'Next steps' with subtitle 'Launch in Q2'.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.add_slide"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 343.5,
+    "plan": 3290.9,
+    "validate": 19.7,
+    "render": 738.6,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-duplicate",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "keeps": true,
+    "count": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Duplicate the Highlights slide",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 5760.1,
+   "input_tokens": 1551,
+   "output_tokens": 97,
+   "cost_usd": 0.000291,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nDuplicated the Highlights slide and placed the copy at the end.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.duplicate_slide"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 355.2,
+    "plan": 4530.9,
+    "validate": 25.3,
+    "render": 825.1,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-delete-slide",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Delete the third slide",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 49545.2,
+   "input_tokens": 1551,
+   "output_tokens": 81,
+   "cost_usd": 0.000281,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nRemoved the third slide from the presentation.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.delete_slide"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 305.7,
+    "plan": 48315.0,
+    "validate": 24.1,
+    "render": 868.8,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-subtitle",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Change the subtitle on the first slide to 'FY2025 Review'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3944.3,
+   "input_tokens": 1561,
+   "output_tokens": 127,
+   "cost_usd": 0.00031,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nUpdated the subtitle on the first slide to 'FY2025 Review'.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.set_text"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 378.1,
+    "plan": 2647.0,
+    "validate": 22.0,
+    "render": 877.1,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-bullet",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "On the Highlights slide change 'Revenue up 12%' to 'Revenue up 15%'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 4790.7,
+   "input_tokens": 1565,
+   "output_tokens": 109,
+   "cost_usd": 0.0003,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nUpdated the Highlights slide text to show revenue up 15%.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.set_text"
+   ],
+   "stages_ms": {
+    "route": 0.9,
+    "understand": 427.9,
+    "plan": 3148.8,
+    "validate": 22.4,
+    "render": 1163.5,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "pptx-move",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "keeps": true,
+    "order": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Move the Chart slide to be the first slide",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 50616.5,
+   "input_tokens": 2580,
+   "output_tokens": 99,
+   "cost_usd": 0.000446,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_product_deck (edited).pptx** (version 1) from *acme_product_deck.pptx*.\n\nMoved the Chart slide to become the first slide.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "pptx.move_slide"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 432.0,
+    "plan": 49268.6,
+    "validate": 15.9,
+    "render": 878.8,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "xlsx-append-row",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Add a row for West with revenue 410.75, margin 0.21 and date 2024-04-02",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3913.4,
+   "input_tokens": 1227,
+   "output_tokens": 147,
+   "cost_usd": 0.000272,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_budget (edited).xlsx** (version 1) from *acme_budget.xlsx*.\n\nAdded a new row for West with the specified revenue, margin, and date.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.\n\nNotes: 'Re",
+   "plan_ops": [
+    "xlsx.append_row"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 41.3,
+    "plan": 3694.5,
+    "validate": 16.2,
+    "render": 139.6,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "xlsx-set-cell",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Set the North revenue (B4) to 1500",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 4683.2,
+   "input_tokens": 1213,
+   "output_tokens": 93,
+   "cost_usd": 0.000238,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_budget (edited).xlsx** (version 1) from *acme_budget.xlsx*.\n\nUpdated North revenue to 1500.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "xlsx.set_cell"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 23.3,
+    "plan": 4488.7,
+    "validate": 19.2,
+    "render": 133.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "xlsx-copy-sheet",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "keeps": true,
+    "sheets": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Copy the Report sheet and name the copy 'Report Q2'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 50884.7,
+   "input_tokens": 1214,
+   "output_tokens": 91,
+   "cost_usd": 0.000237,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_budget (edited).xlsx** (version 1) from *acme_budget.xlsx*.\n\nCopied the Report sheet to a new sheet named 'Report Q2'.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.\n\nNotes: copy_sheet: imag",
+   "plan_ops": [
+    "xlsx.copy_sheet"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 22.9,
+    "plan": 50646.1,
+    "validate": 20.2,
+    "render": 178.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "xlsx-rename-region",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Change the region 'East' to 'Central'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 2865.8,
+   "input_tokens": 1211,
+   "output_tokens": 93,
+   "cost_usd": 0.000237,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_budget (edited).xlsx** (version 1) from *acme_budget.xlsx*.\n\nUpdated region name in row 6 from East to Central.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "xlsx.set_cell"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 27.3,
+    "plan": 2632.2,
+    "validate": 20.3,
+    "render": 166.4,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "xlsx-title",
+   "expect": "edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {
+    "contains": true,
+    "absent": true,
+    "keeps": true
+   },
+   "success": true,
+   "status": "ok",
+   "msg": "Change the sheet title in A1 to 'FY2024 Sales'",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 2104.6,
+   "input_tokens": 1215,
+   "output_tokens": 103,
+   "cost_usd": 0.000244,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_budget (edited).xlsx** (version 1) from *acme_budget.xlsx*.\n\nUpdated the sheet title in A1 to 'FY2024 Sales'.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "xlsx.set_cell"
+   ],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 22.5,
+    "plan": 1895.9,
+    "validate": 16.9,
+    "render": 150.6,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "chat-formats",
+   "expect": "chat",
+   "intent": "chat",
+   "intent_ok": true,
+   "produced": false,
+   "checks": {},
+   "success": true,
+   "status": "ok",
+   "msg": "Which file formats can you work with?",
+   "attempts": 0,
+   "preserved": null,
+   "violations": [],
+   "duration_ms": 2189.9,
+   "input_tokens": 345,
+   "output_tokens": 64,
+   "cost_usd": 9e-05,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "I can work with Microsoft Word, PowerPoint, and Excel files—specifically **DOCX**, **PPTX**, and **XLSX** formats.",
+   "plan_ops": [],
+   "stages_ms": {
+    "route": 0.2,
+    "chat": 2180.4
+   }
+  },
+  {
+   "id": "chat-explain",
+   "expect": "chat",
+   "intent": "chat",
+   "intent_ok": true,
+   "produced": false,
+   "checks": {},
+   "success": true,
+   "status": "ok",
+   "msg": "Explain what is in the Details section of my document",
+   "attempts": 0,
+   "preserved": null,
+   "violations": [],
+   "duration_ms": 78662.1,
+   "input_tokens": 347,
+   "output_tokens": 152,
+   "cost_usd": 0.000143,
+   "llm_calls": 3,
+   "llm_failures": 2,
+   "llm_retries": 2,
+   "crash": "",
+   "reply": "The **Details** section (heading 2) contains a single table (T0). The table is a 3 × 3 grid with the following layout:\n\n| Region | Q1 | Q2 |\n|--------|----|----|\n| North  | 10 | 20 |\n| **Merged total** (spanning the first two columns) | **3",
+   "plan_ops": [],
+   "stages_ms": {
+    "route": 0.2,
+    "chat": 78633.0
+   }
+  },
+  {
+   "id": "chat-greeting",
+   "expect": "chat",
+   "intent": "chat",
+   "intent_ok": true,
+   "produced": false,
+   "checks": {},
+   "success": true,
+   "status": "ok",
+   "msg": "hello there",
+   "attempts": 0,
+   "preserved": null,
+   "violations": [],
+   "duration_ms": 1882.3,
+   "input_tokens": 210,
+   "output_tokens": 73,
+   "cost_usd": 7.5e-05,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Hello! How can I help you with your Word, PowerPoint, or Excel document today? If you’d like me to review or edit something, please attach the file (DOCX, PPTX, or XLSX).",
+   "plan_ops": [],
+   "stages_ms": {
+    "route": 0.1,
+    "chat": 1849.5
+   }
+  },
+  {
+   "id": "clarify-no-file",
+   "expect": "clarify",
+   "intent": "clarify",
+   "intent_ok": true,
+   "produced": false,
+   "checks": {},
+   "success": true,
+   "status": "ok",
+   "msg": "Change the title to Annual Report",
+   "attempts": 0,
+   "preserved": null,
+   "violations": [],
+   "duration_ms": 14.5,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0,
+   "llm_calls": 0,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Please attach a DOCX, PPTX or XLSX file for me to work on.",
+   "plan_ops": [],
+   "stages_ms": {
+    "route": 0.1
+   }
+  },
+  {
+   "id": "clarify-two-files",
+   "expect": "clarify_or_edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": true,
+   "checks": {},
+   "success": false,
+   "status": "ok",
+   "msg": "Change the title to Annual Review",
+   "attempts": 1,
+   "preserved": true,
+   "violations": [],
+   "duration_ms": 3911.3,
+   "input_tokens": 1915,
+   "output_tokens": 189,
+   "cost_usd": 0.000401,
+   "llm_calls": 2,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "Done. I created **acme_quarterly_report (edited).docx** (version 1) from *acme_quarterly_report.docx*.\n\nUpdated the document title to 'Annual Review'.\n\n1 change(s) applied.\n\nThe original layout and formatting were preserved.",
+   "plan_ops": [
+    "docx.replace_text"
+   ],
+   "stages_ms": {
+    "route": 1922.4,
+    "understand": 63.5,
+    "plan": 1709.5,
+    "validate": 20.0,
+    "render": 165.3,
+    "respond": 0.0
+   }
+  },
+  {
+   "id": "impossible-paragraph",
+   "expect": "no_edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": false,
+   "checks": {},
+   "success": true,
+   "status": "gave_up",
+   "msg": "Delete paragraph 99 of the document",
+   "attempts": 3,
+   "preserved": null,
+   "violations": [],
+   "duration_ms": 59243.6,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0,
+   "llm_calls": 3,
+   "llm_failures": 3,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "I wasn't able to produce a valid change for that request after 3 attempts. Last problem: schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validatio",
+   "plan_ops": [],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 65.0,
+    "plan": 5496.1,
+    "validate": 0.0,
+    "give_up": 0.0
+   }
+  },
+  {
+   "id": "impossible-sheet",
+   "expect": "no_edit",
+   "intent": "edit",
+   "intent_ok": true,
+   "produced": false,
+   "checks": {},
+   "success": true,
+   "status": "gave_up",
+   "msg": "Set cell B4 on the sheet called 'Forecast' to 5",
+   "attempts": 3,
+   "preserved": null,
+   "violations": [],
+   "duration_ms": 60510.7,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0,
+   "llm_calls": 3,
+   "llm_failures": 3,
+   "llm_retries": 0,
+   "crash": "",
+   "reply": "I wasn't able to produce a valid change for that request after 3 attempts. Last problem: schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validatio",
+   "plan_ops": [],
+   "stages_ms": {
+    "route": 0.1,
+    "understand": 13.5,
+    "plan": 5484.6,
+    "validate": 0.0,
+    "give_up": 0.0
+   }
+  }
+ ],
+ "traces": {
+  "docx-retitle": {
+   "run_id": "f9aba18ec607497c88ef28ab8cd9139a",
+   "duration_ms": 3337.6,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1479,
+   "output_tokens": 91,
+   "cost_usd": 0.000276,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "ac8492f9ffc9",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 18.7,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "d155f34a367b",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 21.3,
+     "duration_ms": 93.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "2f25f8d1971d",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 116.3,
+     "duration_ms": 2957.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "9fcd2653f14d",
+     "parent": "2f25f8d1971d",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 119.2,
+     "duration_ms": 2954.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2195,
+      "input_tokens": 1479,
+      "output_tokens": 91
+     }
+    },
+    {
+     "id": "be26948fe4fe",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3075.4,
+     "duration_ms": 27.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "2fe4fa62c9cf",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3104.7,
+     "duration_ms": 228.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "238eee68998b",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3334.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-insert-para": {
+   "run_id": "7143dd21c15b4d3c97bc6c788051e890",
+   "duration_ms": 2459.0,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1480,
+   "output_tokens": 103,
+   "cost_usd": 0.000284,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "a74351b0bf18",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 10.1,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "e696adda564b",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 11.6,
+     "duration_ms": 93.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "76227b984209",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 107.9,
+     "duration_ms": 2071.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "1b2387d4b544",
+     "parent": "76227b984209",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 110.3,
+     "duration_ms": 2068.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2205,
+      "input_tokens": 1480,
+      "output_tokens": 103
+     }
+    },
+    {
+     "id": "22aa1c959603",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2180.1,
+     "duration_ms": 30.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "49cc4124f8e0",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 2213.3,
+     "duration_ms": 241.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "88e064176c46",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 2456.3,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-set-cell": {
+   "run_id": "db2eae7b6e4f4bbeb7b85286fa7c8cc6",
+   "duration_ms": 3001.6,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1477,
+   "output_tokens": 183,
+   "cost_usd": 0.000331,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "e768ac14da25",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 10.1,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "4c3cbd6d8c90",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 11.8,
+     "duration_ms": 90.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "7a812d4d21b6",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 104.0,
+     "duration_ms": 2615.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "2bf6826a0e0f",
+     "parent": "7a812d4d21b6",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 107.7,
+     "duration_ms": 2611.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2192,
+      "input_tokens": 1477,
+      "output_tokens": 183
+     }
+    },
+    {
+     "id": "ebdabddb3c2b",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2721.2,
+     "duration_ms": 29.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "639e40bb8ed3",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 2752.1,
+     "duration_ms": 245.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "88639edd5339",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 2999.9,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-add-row": {
+   "run_id": "0135058e86f14f6cb9dd53bcf5daca01",
+   "duration_ms": 3269.8,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1482,
+   "output_tokens": 230,
+   "cost_usd": 0.00036,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "b0dea6d80d92",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 41.7,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "bbb607110af9",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 43.9,
+     "duration_ms": 95.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "a6d35943a5bd",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 141.1,
+     "duration_ms": 2847.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "acd9324f391e",
+     "parent": "a6d35943a5bd",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 144.0,
+     "duration_ms": 2844.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2195,
+      "input_tokens": 1482,
+      "output_tokens": 230
+     }
+    },
+    {
+     "id": "2836d720c1f0",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2990.1,
+     "duration_ms": 27.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "52c75e9fd1c8",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3020.0,
+     "duration_ms": 245.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "baad95ee36ec",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3266.9,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-delete-heading": {
+   "run_id": "dfee027f083a4d9ea502cc62e940b192",
+   "duration_ms": 50398.6,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1470,
+   "output_tokens": 89,
+   "cost_usd": 0.000274,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "9a0d2aa94661",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 11.0,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "7fc2811ada03",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 13.1,
+     "duration_ms": 82.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "eb191c02cd7f",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 98.3,
+     "duration_ms": 49986.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "32969ca5c74d",
+     "parent": "eb191c02cd7f",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 47885.5,
+     "duration_ms": 2199.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2188,
+      "rate_wait_s": 47.78,
+      "input_tokens": 1470,
+      "output_tokens": 89
+     }
+    },
+    {
+     "id": "936fac1d2728",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 50087.3,
+     "duration_ms": 37.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "6386fd9d8f97",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 50128.8,
+     "duration_ms": 264.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "30298bbf64f5",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 50394.9,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-replace-all": {
+   "run_id": "af3b3feee5fb4e93bf0e2c42f59ed130",
+   "duration_ms": 3010.4,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1476,
+   "output_tokens": 90,
+   "cost_usd": 0.000275,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "2653c544e4f7",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 18.9,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "6156d25a243d",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 21.9,
+     "duration_ms": 108.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "42560285ee4d",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 133.3,
+     "duration_ms": 2580.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "5537c97d60f1",
+     "parent": "42560285ee4d",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 797.0,
+     "duration_ms": 1916.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2196,
+      "rate_wait_s": 0.66,
+      "input_tokens": 1476,
+      "output_tokens": 90
+     }
+    },
+    {
+     "id": "bc66706c4082",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2714.7,
+     "duration_ms": 24.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "1e26577a9d54",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 2742.3,
+     "duration_ms": 264.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "69bc4d8eb3e5",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3008.1,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-append": {
+   "run_id": "d942d7fbd3e1466497dddfde8dfb8801",
+   "duration_ms": 2779.2,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1481,
+   "output_tokens": 102,
+   "cost_usd": 0.000283,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "a5f25c7878f2",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 36.2,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "f77e8b47c188",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 38.7,
+     "duration_ms": 108.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "41a2d1d67736",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 149.7,
+     "duration_ms": 2347.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "e63a18fde52c",
+     "parent": "41a2d1d67736",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 249.6,
+     "duration_ms": 2247.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2204,
+      "rate_wait_s": 0.1,
+      "input_tokens": 1481,
+      "output_tokens": 102
+     }
+    },
+    {
+     "id": "634b59836e85",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2498.9,
+     "duration_ms": 26.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "54c9c21775e5",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 2528.0,
+     "duration_ms": 246.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "72e757f157b3",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 2776.2,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-total": {
+   "run_id": "e0d396e34c63425aabd86b468c5cd0f6",
+   "duration_ms": 3162.5,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1474,
+   "output_tokens": 225,
+   "cost_usd": 0.000356,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "f2ffe7225ab4",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 30.6,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "0c2e575278e7",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 32.9,
+     "duration_ms": 115.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "de62bb72ddd7",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 153.0,
+     "duration_ms": 2701.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "27371d6a1c84",
+     "parent": "de62bb72ddd7",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 427.1,
+     "duration_ms": 2427.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2191,
+      "rate_wait_s": 0.27,
+      "input_tokens": 1474,
+      "output_tokens": 225
+     }
+    },
+    {
+     "id": "1c5a24f38449",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2856.2,
+     "duration_ms": 29.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "9ad5282f9477",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 2887.8,
+     "duration_ms": 269.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "a7c6020970ba",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3159.3,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-rewrite-intro": {
+   "run_id": "edbb09bfca1c48b3bf4ca4c4139b004c",
+   "duration_ms": 50485.3,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1477,
+   "output_tokens": 92,
+   "cost_usd": 0.000277,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "94172bb2fcca",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 9.2,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "72518d19a47d",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 11.5,
+     "duration_ms": 106.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "11099e1c9e65",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 120.6,
+     "duration_ms": 50038.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "9caad8295ece",
+     "parent": "11099e1c9e65",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 48267.7,
+     "duration_ms": 1890.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2199,
+      "rate_wait_s": 48.14,
+      "input_tokens": 1477,
+      "output_tokens": 92
+     }
+    },
+    {
+     "id": "c85ab55cd1a8",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 50160.1,
+     "duration_ms": 25.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "25b40fd5ba88",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 50189.3,
+     "duration_ms": 291.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "371303fc1d9c",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 50482.4,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "docx-delete-row": {
+   "run_id": "10ec83999cb4457e86d5b0a42cdae260",
+   "duration_ms": 3529.7,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1471,
+   "output_tokens": 116,
+   "cost_usd": 0.00029,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "19af0207408f",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 45.4,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "9df49c379bf9",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 48.0,
+     "duration_ms": 123.7,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "fb12b5666c62",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 173.7,
+     "duration_ms": 3093.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "bd9e8bf065f2",
+     "parent": "fb12b5666c62",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 1101.7,
+     "duration_ms": 2164.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2190,
+      "rate_wait_s": 0.93,
+      "input_tokens": 1471,
+      "output_tokens": 116
+     }
+    },
+    {
+     "id": "b0e7ef442171",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3268.7,
+     "duration_ms": 24.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "ce55bf9d2de6",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3295.4,
+     "duration_ms": 230.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "17c482543a7f",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3527.1,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-title": {
+   "run_id": "db93936a239c4c819350aa2138254418",
+   "duration_ms": 5987.2,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1560,
+   "output_tokens": 129,
+   "cost_usd": 0.000311,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "24d7db50fb7e",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 8.4,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "a6fab519b7fe",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 10.6,
+     "duration_ms": 360.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "b7313851bf80",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 373.2,
+     "duration_ms": 4793.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "8f211b5c19ed",
+     "parent": "b7313851bf80",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 3114.2,
+     "duration_ms": 2052.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2462,
+      "rate_wait_s": 2.74,
+      "input_tokens": 1560,
+      "output_tokens": 129
+     }
+    },
+    {
+     "id": "5d9d5de8355d",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 5167.7,
+     "duration_ms": 23.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "cb0d47050044",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 5193.7,
+     "duration_ms": 787.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "07fb02b3b055",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 5983.3,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-replace-all": {
+   "run_id": "c5360abde9a04794bdd300558be3a975",
+   "duration_ms": 51772.1,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1556,
+   "output_tokens": 92,
+   "cost_usd": 0.000289,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "2e7d1c1cfe4f",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 5.6,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "058de451a8a2",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 7.9,
+     "duration_ms": 396.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "46aad921f6f0",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 407.2,
+     "duration_ms": 50510.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "468a671247c0",
+     "parent": "46aad921f6f0",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 48148.5,
+     "duration_ms": 2768.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2457,
+      "rate_wait_s": 47.74,
+      "input_tokens": 1556,
+      "output_tokens": 92
+     }
+    },
+    {
+     "id": "9f4880621056",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 50919.0,
+     "duration_ms": 20.7,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "ae2d1a034d9b",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 50942.8,
+     "duration_ms": 825.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "9113ab137b39",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 51769.6,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-add-slide": {
+   "run_id": "b2f6085b9e7f4799a02aa2344a32edf6",
+   "duration_ms": 4412.2,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1565,
+   "output_tokens": 135,
+   "cost_usd": 0.000316,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "0086f9b68bf8",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 5.2,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "8484922d8687",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 7.0,
+     "duration_ms": 343.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "47534fb7c12d",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 352.5,
+     "duration_ms": 3290.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "041a6a61237e",
+     "parent": "47534fb7c12d",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 355.0,
+     "duration_ms": 3287.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2465,
+      "input_tokens": 1565,
+      "output_tokens": 135
+     }
+    },
+    {
+     "id": "6ecdd64d9e28",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3646.2,
+     "duration_ms": 19.7,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "b34ef56c8044",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3668.5,
+     "duration_ms": 738.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "fb6830b668dc",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 4409.2,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-duplicate": {
+   "run_id": "8474ca61778e431d92958ab7e9b75a69",
+   "duration_ms": 5760.1,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1551,
+   "output_tokens": 97,
+   "cost_usd": 0.000291,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "932bc14172d8",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 7.7,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "216e48849c79",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 10.2,
+     "duration_ms": 355.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "bdce8d7c4abe",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 367.3,
+     "duration_ms": 4530.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "017ecb08a503",
+     "parent": "bdce8d7c4abe",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 842.6,
+     "duration_ms": 4055.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2455,
+      "rate_wait_s": 0.47,
+      "input_tokens": 1551,
+      "output_tokens": 97
+     }
+    },
+    {
+     "id": "ec9b67524ab3",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 4900.1,
+     "duration_ms": 25.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "e55a05befbd7",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 4928.1,
+     "duration_ms": 825.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "7a5466e9e557",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 5755.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-delete-slide": {
+   "run_id": "4e975a6b2265476a822a87ad3d5af7b5",
+   "duration_ms": 49545.2,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1551,
+   "output_tokens": 81,
+   "cost_usd": 0.000281,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "ee4adf6ef341",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 18.0,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "be8e018025cc",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 21.2,
+     "duration_ms": 305.7,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "123a6be2d546",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 328.2,
+     "duration_ms": 48315.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "b4e6af50e86b",
+     "parent": "123a6be2d546",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 46099.8,
+     "duration_ms": 2543.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2452,
+      "rate_wait_s": 45.77,
+      "input_tokens": 1551,
+      "output_tokens": 81
+     }
+    },
+    {
+     "id": "40306ad9eba7",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 48646.0,
+     "duration_ms": 24.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "a8d24a7b090a",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 48672.1,
+     "duration_ms": 868.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "ecdafff7e522",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 49543.2,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-subtitle": {
+   "run_id": "5a16723a91a54b5184085e5437e54cd0",
+   "duration_ms": 3944.3,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1561,
+   "output_tokens": 127,
+   "cost_usd": 0.00031,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "9c103f613d01",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 6.1,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "2eae1d3454e5",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 8.6,
+     "duration_ms": 378.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "92fac848371a",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 388.1,
+     "duration_ms": 2647.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "12b1a9db863e",
+     "parent": "92fac848371a",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 519.7,
+     "duration_ms": 2515.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2463,
+      "rate_wait_s": 0.13,
+      "input_tokens": 1561,
+      "output_tokens": 127
+     }
+    },
+    {
+     "id": "78ac87e08ebf",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3037.6,
+     "duration_ms": 22.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "b34ee688a295",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3061.5,
+     "duration_ms": 877.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "a2b45fcb6373",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3941.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-bullet": {
+   "run_id": "fe12b9811dfc43948d0257cf5537c804",
+   "duration_ms": 4790.7,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1565,
+   "output_tokens": 109,
+   "cost_usd": 0.0003,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "c2bd51137ab9",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 11.2,
+     "duration_ms": 0.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "da4c55ae63d0",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 16.0,
+     "duration_ms": 427.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "dd1b218e4612",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 446.2,
+     "duration_ms": 3148.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "f9b9dfc45ae8",
+     "parent": "dd1b218e4612",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 1469.1,
+     "duration_ms": 2125.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2466,
+      "rate_wait_s": 1.02,
+      "input_tokens": 1565,
+      "output_tokens": 109
+     }
+    },
+    {
+     "id": "c8bf5f44d92c",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3596.4,
+     "duration_ms": 22.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "b9b2cc2c1611",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3622.0,
+     "duration_ms": 1163.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "2a10a187d548",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 4787.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "pptx-move": {
+   "run_id": "69313722f26b422287ddabf4c6274ade",
+   "duration_ms": 50616.5,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 2580,
+   "output_tokens": 99,
+   "cost_usd": 0.000446,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "aa2a886ee03e",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 6.5,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "77aab1499a7f",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 8.6,
+     "duration_ms": 432.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "4870e0aa4f79",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 444.0,
+     "duration_ms": 49268.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "3781f2b9d6ed",
+     "parent": "4870e0aa4f79",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 47670.0,
+     "duration_ms": 2042.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2458,
+      "rate_wait_s": 47.22,
+      "input_tokens": 2580,
+      "output_tokens": 99
+     }
+    },
+    {
+     "id": "4b52149ae069",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 49714.4,
+     "duration_ms": 15.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "e51fbd9985ce",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 49732.6,
+     "duration_ms": 878.8,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "ea745f3f0776",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 50613.5,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "xlsx-append-row": {
+   "run_id": "da7313f159b447a4a177a05569760a22",
+   "duration_ms": 3913.4,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1227,
+   "output_tokens": 147,
+   "cost_usd": 0.000272,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "bf17c9e86eed",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 8.5,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "ec8f5634f9b5",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 10.5,
+     "duration_ms": 41.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "c86dc0897293",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 54.7,
+     "duration_ms": 3694.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "61f6dbf193cb",
+     "parent": "c86dc0897293",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 1014.9,
+     "duration_ms": 2727.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2256,
+      "rate_wait_s": 0.96,
+      "input_tokens": 1227,
+      "output_tokens": 147
+     }
+    },
+    {
+     "id": "dd4399b18f08",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3751.0,
+     "duration_ms": 16.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "560fbd355f75",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3769.5,
+     "duration_ms": 139.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "e0b0510d6d4c",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3910.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "xlsx-set-cell": {
+   "run_id": "cd17e35f91364057944cb7750272fdb8",
+   "duration_ms": 4683.2,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1213,
+   "output_tokens": 93,
+   "cost_usd": 0.000238,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "f7fce712f848",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 4.1,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "ca5227538c8f",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 6.8,
+     "duration_ms": 23.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "d3081bacd66f",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 33.1,
+     "duration_ms": 4488.7,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "46cba1867267",
+     "parent": "d3081bacd66f",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 2025.5,
+     "duration_ms": 2496.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2245,
+      "rate_wait_s": 1.99,
+      "input_tokens": 1213,
+      "output_tokens": 93
+     }
+    },
+    {
+     "id": "5c8b199c1e01",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 4523.5,
+     "duration_ms": 19.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "948af89cec99",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 4545.3,
+     "duration_ms": 133.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "ccba7e5dec40",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 4680.5,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "xlsx-copy-sheet": {
+   "run_id": "5c535402358944ed8d08862de510ebf0",
+   "duration_ms": 50884.7,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1214,
+   "output_tokens": 91,
+   "cost_usd": 0.000237,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "1aee47632da9",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 4.5,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "734452befbc1",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 6.4,
+     "duration_ms": 22.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "1c98c53705fa",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 31.7,
+     "duration_ms": 50646.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "205506f28287",
+     "parent": "1c98c53705fa",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 48350.1,
+     "duration_ms": 2327.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2250,
+      "rate_wait_s": 48.32,
+      "input_tokens": 1214,
+      "output_tokens": 91
+     }
+    },
+    {
+     "id": "9299c545af09",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 50679.7,
+     "duration_ms": 20.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "f37d932e2af1",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 50702.4,
+     "duration_ms": 178.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "a0e26dc22683",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 50882.1,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "xlsx-rename-region": {
+   "run_id": "9d078812ed0744cb9cbb8ae5b469c53b",
+   "duration_ms": 2865.8,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1211,
+   "output_tokens": 93,
+   "cost_usd": 0.000237,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "ae0e058d5e44",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 4.7,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "9448facb2e4a",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 7.4,
+     "duration_ms": 27.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "83a765f96478",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 37.3,
+     "duration_ms": 2632.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "7b5befb57879",
+     "parent": "83a765f96478",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 40.2,
+     "duration_ms": 2629.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2246,
+      "input_tokens": 1211,
+      "output_tokens": 93
+     }
+    },
+    {
+     "id": "f26a7779c3a7",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2671.1,
+     "duration_ms": 20.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "fd7abea162e3",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 2694.1,
+     "duration_ms": 166.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "7df6cdd6132f",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 2862.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "xlsx-title": {
+   "run_id": "3630af6bc3854be59dbd2b7972483c95",
+   "duration_ms": 2104.6,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1215,
+   "output_tokens": 103,
+   "cost_usd": 0.000244,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "41f2d3fe399e",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 5.4,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "c95a81e9e766",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 7.0,
+     "duration_ms": 22.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "2e560f6591db",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 31.7,
+     "duration_ms": 1895.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "5ae1e29ebd8c",
+     "parent": "2e560f6591db",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 34.2,
+     "duration_ms": 1893.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2248,
+      "input_tokens": 1215,
+      "output_tokens": 103
+     }
+    },
+    {
+     "id": "b0e51d90839d",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 1929.3,
+     "duration_ms": 16.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "3f70e52893ae",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 1948.6,
+     "duration_ms": 150.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "ac665bee0bbf",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 2101.4,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "chat-formats": {
+   "run_id": "a1383746bed3467da6ddb23aa61b10fe",
+   "duration_ms": 2189.9,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 345,
+   "output_tokens": 64,
+   "cost_usd": 9e-05,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "818f8b230566",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 5.1,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "5fd93cba93e9",
+     "parent": null,
+     "name": "chat",
+     "kind": "node",
+     "start_ms": 7.4,
+     "duration_ms": 2180.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "16122dfc3f84",
+     "parent": "5fd93cba93e9",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 109.6,
+     "duration_ms": 2078.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 1254,
+      "input_tokens": 345,
+      "output_tokens": 64
+     }
+    }
+   ]
+  },
+  "chat-explain": {
+   "run_id": "65389cb0d922438fb6f947d9c2464049",
+   "duration_ms": 78662.1,
+   "llm_calls": 3,
+   "llm_failures": 2,
+   "llm_retries": 2,
+   "input_tokens": 347,
+   "output_tokens": 152,
+   "cost_usd": 0.000143,
+   "tool_calls": 0,
+   "errors": 2,
+   "spans": [
+    {
+     "id": "832b041a9a85",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 22.5,
+     "duration_ms": 0.2,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "3c304c635d76",
+     "parent": null,
+     "name": "chat",
+     "kind": "node",
+     "start_ms": 26.1,
+     "duration_ms": 78633.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "f39dd3538f06",
+     "parent": "3c304c635d76",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 135.6,
+     "duration_ms": 1863.5,
+     "status": "error",
+     "error": "APIConnectionError: Connection error.",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 1259
+     }
+    },
+    {
+     "id": "e39765c81ed4",
+     "parent": "3c304c635d76",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 73490.3,
+     "duration_ms": 814.6,
+     "status": "error",
+     "error": "APIConnectionError: Connection error.",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 1,
+      "est_tokens": 1259
+     }
+    },
+    {
+     "id": "ae7b329e7d52",
+     "parent": "3c304c635d76",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 77301.2,
+     "duration_ms": 1357.9,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 2,
+      "est_tokens": 1259,
+      "input_tokens": 347,
+      "output_tokens": 152
+     }
+    }
+   ]
+  },
+  "chat-greeting": {
+   "run_id": "6590df1895674a6893e9eb1aa7a99b39",
+   "duration_ms": 1882.3,
+   "llm_calls": 1,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 210,
+   "output_tokens": 73,
+   "cost_usd": 7.5e-05,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "956238e567d2",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 14.0,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "46e74747bc72",
+     "parent": null,
+     "name": "chat",
+     "kind": "node",
+     "start_ms": 31.4,
+     "duration_ms": 1849.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "2ec15449d8c6",
+     "parent": "46e74747bc72",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 31.5,
+     "duration_ms": 1849.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 1136,
+      "input_tokens": 210,
+      "output_tokens": 73
+     }
+    }
+   ]
+  },
+  "clarify-no-file": {
+   "run_id": "50704f1be34e473aa759605483f092e0",
+   "duration_ms": 14.5,
+   "llm_calls": 0,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "0d69cc45ff23",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 11.7,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    }
+   ]
+  },
+  "clarify-two-files": {
+   "run_id": "8108bea611964f919d1ca0fae7b113ab",
+   "duration_ms": 3911.3,
+   "llm_calls": 2,
+   "llm_failures": 0,
+   "llm_retries": 0,
+   "input_tokens": 1915,
+   "output_tokens": 189,
+   "cost_usd": 0.000401,
+   "tool_calls": 0,
+   "errors": 0,
+   "spans": [
+    {
+     "id": "afac6a70cecd",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 20.2,
+     "duration_ms": 1922.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "640bc31edf0a",
+     "parent": "afac6a70cecd",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 20.6,
+     "duration_ms": 1922.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 606,
+      "input_tokens": 445,
+      "output_tokens": 94
+     }
+    },
+    {
+     "id": "1412c6a934ed",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 1944.0,
+     "duration_ms": 63.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "bbba616af458",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 2009.4,
+     "duration_ms": 1709.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 1
+     }
+    },
+    {
+     "id": "c3609fa97f87",
+     "parent": "bbba616af458",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 2014.3,
+     "duration_ms": 1704.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2190,
+      "input_tokens": 1470,
+      "output_tokens": 95
+     }
+    },
+    {
+     "id": "57365fdc399e",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 3719.9,
+     "duration_ms": 20.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "b1a86478420f",
+     "parent": null,
+     "name": "render",
+     "kind": "node",
+     "start_ms": 3742.5,
+     "duration_ms": 165.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "7e275406f8c1",
+     "parent": null,
+     "name": "respond",
+     "kind": "node",
+     "start_ms": 3909.1,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "impossible-paragraph": {
+   "run_id": "a0397f38323c466e9cf9085f7b887d71",
+   "duration_ms": 59243.6,
+   "llm_calls": 3,
+   "llm_failures": 3,
+   "llm_retries": 0,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0,
+   "tool_calls": 0,
+   "errors": 3,
+   "spans": [
+    {
+     "id": "817cf4017d97",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 8.7,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "56bb3b0ab5ba",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 10.2,
+     "duration_ms": 65.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "8e446a0ca2f6",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 77.3,
+     "duration_ms": 1342.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "plan_errors": 1,
+      "first_plan_error": "schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed:",
+      "attempt": 1
+     }
+    },
+    {
+     "id": "245c7ed2eee0",
+     "parent": "8e446a0ca2f6",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 80.9,
+     "duration_ms": 1337.8,
+     "status": "error",
+     "error": "BadRequestError: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed: attempted to call tool 'json' which was not in request.tools\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"json\", \"arguments\": {\\n  \"ops",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2190
+     }
+    },
+    {
+     "id": "974291389d08",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 1420.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "7063e642c7e5",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 1422.4,
+     "duration_ms": 52319.3,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "plan_errors": 1,
+      "first_plan_error": "schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed:",
+      "attempt": 2
+     }
+    },
+    {
+     "id": "aa150fbe306b",
+     "parent": "7063e642c7e5",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 52604.1,
+     "duration_ms": 1137.6,
+     "status": "error",
+     "error": "BadRequestError: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed: attempted to call tool 'json' which was not in request.tools\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"json\", \"arguments\": {\\n  \"ops",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2296,
+      "rate_wait_s": 51.18
+     }
+    },
+    {
+     "id": "deee104dbe86",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 53742.7,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "d94f004fa892",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 53744.2,
+     "duration_ms": 5496.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "plan_errors": 1,
+      "first_plan_error": "schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed:",
+      "attempt": 3
+     }
+    },
+    {
+     "id": "84373d8d3353",
+     "parent": "d94f004fa892",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 58100.2,
+     "duration_ms": 1140.0,
+     "status": "error",
+     "error": "BadRequestError: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed: attempted to call tool 'json' which was not in request.tools\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"json\", \"arguments\": {\\n  \"ops",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2296,
+      "rate_wait_s": 4.35
+     }
+    },
+    {
+     "id": "0dd16f6e19b5",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 59241.1,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "6ef3ea97286f",
+     "parent": null,
+     "name": "give_up",
+     "kind": "node",
+     "start_ms": 59242.2,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  },
+  "impossible-sheet": {
+   "run_id": "b720ab44c4d4444289c40b525eafade3",
+   "duration_ms": 60510.7,
+   "llm_calls": 3,
+   "llm_failures": 3,
+   "llm_retries": 0,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0,
+   "tool_calls": 0,
+   "errors": 3,
+   "spans": [
+    {
+     "id": "3094c99d33e5",
+     "parent": null,
+     "name": "route",
+     "kind": "node",
+     "start_ms": 2.3,
+     "duration_ms": 0.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "attempt": 0
+     }
+    },
+    {
+     "id": "8419744b8b65",
+     "parent": null,
+     "name": "understand",
+     "kind": "node",
+     "start_ms": 3.0,
+     "duration_ms": 13.5,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "13d62df46903",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 17.6,
+     "duration_ms": 2407.4,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "plan_errors": 1,
+      "first_plan_error": "schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed:",
+      "attempt": 1
+     }
+    },
+    {
+     "id": "4b519dc1d337",
+     "parent": "13d62df46903",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 866.4,
+     "duration_ms": 1558.5,
+     "status": "error",
+     "error": "BadRequestError: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed: attempted to call tool 'json' which was not in request.tools\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"json\", \"arguments\": {\\n  \"ops",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2249,
+      "rate_wait_s": 0.85
+     }
+    },
+    {
+     "id": "1988b98d2c41",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 2425.9,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "2a8d6c4f3d50",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 2427.0,
+     "duration_ms": 52577.1,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "plan_errors": 1,
+      "first_plan_error": "schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed:",
+      "attempt": 2
+     }
+    },
+    {
+     "id": "9998dd703db3",
+     "parent": "2a8d6c4f3d50",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 53384.7,
+     "duration_ms": 1619.4,
+     "status": "error",
+     "error": "BadRequestError: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed: attempted to call tool 'json' which was not in request.tools\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"json\", \"arguments\": {\\n  \"ops",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2355,
+      "rate_wait_s": 50.96
+     }
+    },
+    {
+     "id": "eda2587d80d4",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 55005.3,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "bbc01888e6ad",
+     "parent": null,
+     "name": "plan",
+     "kind": "node",
+     "start_ms": 55006.5,
+     "duration_ms": 5484.6,
+     "status": "ok",
+     "error": "",
+     "attrs": {
+      "plan_errors": 1,
+      "first_plan_error": "schema violation: the model did not return structured output: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed:",
+      "attempt": 3
+     }
+    },
+    {
+     "id": "f5de11174947",
+     "parent": "bbc01888e6ad",
+     "name": "llm.invoke",
+     "kind": "llm",
+     "start_ms": 58886.4,
+     "duration_ms": 1604.6,
+     "status": "error",
+     "error": "BadRequestError: Error code: 400 - {'error': {'message': \"Tool call validation failed: tool call validation failed: attempted to call tool 'json' which was not in request.tools\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"json\", \"arguments\": {\\n  \"ops",
+     "attrs": {
+      "model": "openai/gpt-oss-120b",
+      "attempt": 0,
+      "est_tokens": 2355,
+      "rate_wait_s": 3.88
+     }
+    },
+    {
+     "id": "2f2b8f2ea416",
+     "parent": null,
+     "name": "validate",
+     "kind": "node",
+     "start_ms": 60506.6,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    },
+    {
+     "id": "695d2e43fe11",
+     "parent": null,
+     "name": "give_up",
+     "kind": "node",
+     "start_ms": 60508.3,
+     "duration_ms": 0.0,
+     "status": "ok",
+     "error": "",
+     "attrs": {}
+    }
+   ]
+  }
+ }
+}

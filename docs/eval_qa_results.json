@@ -1,0 +1,742 @@
+{
+ "meta": {
+  "date": "2026-11-17",
+  "model": "openai/gpt-oss-120b",
+  "embedding": "BAAI/bge-small-en-v1.5",
+  "price_in": 0.15,
+  "price_out": 0.6
+ },
+ "summary": {
+  "answerable_pass": {
+   "n": 19,
+   "pass": 16,
+   "rate": 0.842
+  },
+  "answer_correct": {
+   "n": 19,
+   "pass": 17,
+   "rate": 0.895
+  },
+  "has_citation": {
+   "n": 19,
+   "pass": 16,
+   "rate": 0.842
+  },
+  "citation_right_file": {
+   "n": 19,
+   "pass": 16,
+   "rate": 0.842
+  },
+  "citation_label_file": {
+   "n": 19,
+   "pass": 10,
+   "rate": 0.526
+  },
+  "citation_supported_by_snippet": {
+   "n": 19,
+   "pass": 16,
+   "rate": 0.842
+  },
+  "held_out_pass": {
+   "n": 6,
+   "pass": 5,
+   "rate": 0.833
+  },
+  "abstain_unanswerable": {
+   "n": 4,
+   "pass": 4,
+   "rate": 1.0
+  },
+  "abstain_off_topic": {
+   "n": 5,
+   "pass": 5,
+   "rate": 1.0
+  },
+  "abstain_all": {
+   "n": 9,
+   "pass": 9,
+   "rate": 1.0
+  },
+  "latency": {
+   "p50_s": 1.56,
+   "p95_s": 58.23,
+   "max_s": 58.37
+  },
+  "tokens_mean_in": 1465,
+  "tokens_mean_out": 79,
+  "cost_total": 0.00748,
+  "cost_mean": 0.00027,
+  "crashes": 0
+ },
+ "rows": [
+  {
+   "set": "tuning",
+   "q": "What was total revenue in fiscal 2026?",
+   "expected": "331839",
+   "file": "xls",
+   "response": "Total revenue in fiscal 2026 was $331,839 million [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1895.9,
+   "input_tokens": 1784,
+   "output_tokens": 78,
+   "cost_usd": 0.000314,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "xls"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "How much did the company spend on research and development in 2026?",
+   "expected": "35562",
+   "file": "xls",
+   "response": "The company spent $35,562 million on research and development in 2026 [4].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1636.3,
+   "input_tokens": 1692,
+   "output_tokens": 89,
+   "cost_usd": 0.000307,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": false,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What was operating income in 2026?",
+   "expected": "155237",
+   "file": "xls",
+   "response": "Operating income in 2026 was $155,237 million [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 2045.8,
+   "input_tokens": 2522,
+   "output_tokens": 82,
+   "cost_usd": 0.000427,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": false,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What was net income in fiscal 2026?",
+   "expected": "133749",
+   "file": "xls",
+   "response": "Net income in fiscal 2026 was $133,749 million [5].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 57787.4,
+   "input_tokens": 1953,
+   "output_tokens": 75,
+   "cost_usd": 0.000338,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": false,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What were service and other revenues in 2025?",
+   "expected": "217778",
+   "file": "xls",
+   "response": "Service and other revenue was $217,778 million in 2025 [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1404.7,
+   "input_tokens": 2087,
+   "output_tokens": 75,
+   "cost_usd": 0.000358,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": false,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What is the SEC commission file number?",
+   "expected": "001-37845",
+   "file": "docx",
+   "response": "The SEC commission file number is 001-37845 [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1560.7,
+   "input_tokens": 1498,
+   "output_tokens": 79,
+   "cost_usd": 0.000272,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "Where is the company headquartered?",
+   "expected": "REDMOND",
+   "file": "docx",
+   "response": "The company's corporate headquarters are located in Redmond, Washington [8].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 56749.0,
+   "input_tokens": 1545,
+   "output_tokens": 64,
+   "cost_usd": 0.00027,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What kinds of products does the company sell?",
+   "expected": "operating systems, server applications",
+   "file": "docx",
+   "response": "The company sells a range of software and hardware products, including operating systems, server applications, business solution applications, software development tools, desktop and server management tools, and video games. It also designs and sells devices such as PCs, tablets, gaming and entertai",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1718.6,
+   "input_tokens": 1478,
+   "output_tokens": 131,
+   "cost_usd": 0.0003,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [],
+   "holders": [
+    "docx"
+   ],
+   "correct": true,
+   "cited": false,
+   "right_file": false,
+   "label_file": false,
+   "supported": false,
+   "pass": false
+  },
+  {
+   "set": "tuning",
+   "q": "Which fiscal year does the annual report cover?",
+   "expected": "June 30, 2026",
+   "file": "docx",
+   "response": "The annual report covers the fiscal year ended June 30, 2026 [2].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1124.4,
+   "input_tokens": 1801,
+   "output_tokens": 102,
+   "cost_usd": 0.000331,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What was India's real GDP growth?",
+   "expected": "7.1%",
+   "file": "pdf",
+   "response": "India’s real GDP grew at 7.1% in FY25 and is estimated to grow at 7.6% in FY26 [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 57488.5,
+   "input_tokens": 2265,
+   "output_tokens": 110,
+   "cost_usd": 0.000406,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "pdf"
+   ],
+   "holders": [
+    "pdf"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What is the total shareholding in Cemindia Projects?",
+   "expected": "67.46%",
+   "file": "pdf",
+   "response": "The total shareholding in Cemindia Projects Ltd. is 67.46% [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1436.3,
+   "input_tokens": 1638,
+   "output_tokens": 81,
+   "cost_usd": 0.000294,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "pdf"
+   ],
+   "holders": [
+    "pdf"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "What is the net worth in FY26?",
+   "expected": "89,178",
+   "file": "pdf",
+   "response": "The net worth in FY26 is 89,178 [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1270.2,
+   "input_tokens": 2259,
+   "output_tokens": 88,
+   "cost_usd": 0.000392,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "pdf"
+   ],
+   "holders": [
+    "pdf"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "tuning",
+   "q": "When is this investor presentation dated?",
+   "expected": "May 2026",
+   "file": "pdf",
+   "response": "The documents do not provide a date for the investor presentation.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 58230.2,
+   "input_tokens": 1702,
+   "output_tokens": 65,
+   "cost_usd": 0.000294,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [],
+   "holders": [
+    "pdf"
+   ],
+   "correct": false,
+   "cited": false,
+   "right_file": false,
+   "label_file": false,
+   "supported": false,
+   "pass": false
+  },
+  {
+   "set": "held_out",
+   "q": "What was gross margin in 2026?",
+   "expected": "225465",
+   "file": "xls",
+   "response": "The gross margin in 2026 was $225,465 million [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1327.1,
+   "input_tokens": 1806,
+   "output_tokens": 81,
+   "cost_usd": 0.00032,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": false,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "held_out",
+   "q": "What is the company's phone number?",
+   "expected": "(425) 882-8080",
+   "file": "docx",
+   "response": "I could not find the company's phone number in the provided documents.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1297.3,
+   "input_tokens": 784,
+   "output_tokens": 64,
+   "cost_usd": 0.000156,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [],
+   "holders": [
+    "docx"
+   ],
+   "correct": false,
+   "cited": false,
+   "right_file": false,
+   "label_file": false,
+   "supported": false,
+   "pass": false
+  },
+  {
+   "set": "held_out",
+   "q": "What is the investor relations website?",
+   "expected": "microsoft.com/investor",
+   "file": "docx",
+   "response": "The Investor Relations website is www.microsoft.com/investor [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1339.4,
+   "input_tokens": 1125,
+   "output_tokens": 83,
+   "cost_usd": 0.000219,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "held_out",
+   "q": "What was the net worth in FY25?",
+   "expected": "56,470",
+   "file": "pdf",
+   "response": "The net worth in FY25 was 56,470. [1]",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 54732.5,
+   "input_tokens": 2334,
+   "output_tokens": 76,
+   "cost_usd": 0.000396,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "pdf"
+   ],
+   "holders": [
+    "pdf"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "held_out",
+   "q": "What was operating income in 2025?",
+   "expected": "128528",
+   "file": "xls",
+   "response": "Operating income in 2025 was $128,528 million [1].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 3807.7,
+   "input_tokens": 2676,
+   "output_tokens": 82,
+   "cost_usd": 0.000451,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "docx"
+   ],
+   "holders": [
+    "docx",
+    "xls"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": false,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "held_out",
+   "q": "What was Cash PAT in FY26?",
+   "expected": "15,474",
+   "file": "pdf",
+   "response": "Cash PAT in FY26 was ₹15,474 cr [2].",
+   "n_cites": 1,
+   "crash": "",
+   "duration_ms": 1673.8,
+   "input_tokens": 1150,
+   "output_tokens": 153,
+   "cost_usd": 0.000264,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "cited_files": [
+    "pdf"
+   ],
+   "holders": [
+    "pdf"
+   ],
+   "correct": true,
+   "cited": true,
+   "right_file": true,
+   "label_file": true,
+   "supported": true,
+   "pass": true
+  },
+  {
+   "set": "unanswerable",
+   "q": "What was the company's total revenue in fiscal 2031?",
+   "expected": null,
+   "file": null,
+   "response": "I could not find the company's total revenue for fiscal 2031 in the provided documents.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 58372.0,
+   "input_tokens": 2208,
+   "output_tokens": 74,
+   "cost_usd": 0.000376,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "unanswerable",
+   "q": "Who is the chief executive of the investor-presentation company's main competitor?",
+   "expected": null,
+   "file": null,
+   "response": "I could not find the name of the chief executive of the investor-presentation company's main competitor in the provided documents.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1279.4,
+   "input_tokens": 924,
+   "output_tokens": 75,
+   "cost_usd": 0.000184,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "unanswerable",
+   "q": "How many employees work in the Antarctic office?",
+   "expected": null,
+   "file": null,
+   "response": "I could not find information about an Antarctic office or the number of employees there in the provided documents.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1242.1,
+   "input_tokens": 562,
+   "output_tokens": 71,
+   "cost_usd": 0.000127,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "unanswerable",
+   "q": "What dividend per share did the company pay in 2019?",
+   "expected": null,
+   "file": null,
+   "response": "I could not find the dividend per share for 2019 in the provided documents.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 2015.4,
+   "input_tokens": 1889,
+   "output_tokens": 64,
+   "cost_usd": 0.000322,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "off_topic",
+   "q": "hello there",
+   "expected": null,
+   "file": null,
+   "response": "Hello! How can I assist you with your Word, PowerPoint, or Excel documents today?",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1191.5,
+   "input_tokens": 265,
+   "output_tokens": 48,
+   "cost_usd": 6.9e-05,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "off_topic",
+   "q": "what is the capital of France?",
+   "expected": null,
+   "file": null,
+   "response": "The capital of France is Paris.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 54186.9,
+   "input_tokens": 270,
+   "output_tokens": 32,
+   "cost_usd": 6e-05,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "off_topic",
+   "q": "write me a short poem about autumn",
+   "expected": null,
+   "file": null,
+   "response": "Crisp whispers drift on amber air,  \nLeaves turn gold, then fade to flare.  \nA chill that kisses early night,  \nHarvest moons in soft twilight.  \nAutumn sings in rust‑red rhyme,  \nA fleeting hymn of time.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1422.4,
+   "input_tokens": 270,
+   "output_tokens": 73,
+   "cost_usd": 8.4e-05,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "off_topic",
+   "q": "can you explain how photosynthesis works?",
+   "expected": null,
+   "file": null,
+   "response": "I’m sorry, but I don’t have information on that topic in the documents you’ve provided. If you have a specific question about a section, slide, or sheet in one of the uploaded files, feel free to let me know!",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1082.3,
+   "input_tokens": 271,
+   "output_tokens": 78,
+   "cost_usd": 8.7e-05,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  },
+  {
+   "set": "off_topic",
+   "q": "thanks, that was helpful",
+   "expected": null,
+   "file": null,
+   "response": "You’re welcome! If you need any further help with the documents, just let me know.",
+   "n_cites": 0,
+   "crash": "",
+   "duration_ms": 1019.2,
+   "input_tokens": 268,
+   "output_tokens": 37,
+   "cost_usd": 6.2e-05,
+   "llm_calls": 1,
+   "llm_retries": 0,
+   "abstained": true,
+   "pass": true
+  }
+ ]
+}
