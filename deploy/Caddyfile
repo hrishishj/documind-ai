@@ -1,0 +1,8 @@
+{$DOMAIN} {
+	encode zstd gzip
+	# SSE streaming (chat progress) must not be buffered
+	reverse_proxy frontend:80 {
+		flush_interval -1
+		transport http { read_timeout 300s }
+	}
+}

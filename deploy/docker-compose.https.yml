@@ -1,0 +1,20 @@
+# HTTPS on a single VM (any provider with Docker). Layered on top of the base file:
+#   DOMAIN=demo.example.com docker compose -f docker-compose.yml -f deploy/docker-compose.https.yml up -d --build
+# Caddy obtains and renews a Let's Encrypt certificate automatically; DNS for $DOMAIN must point at the VM and ports 80/443 be open.
+services:
+  backend:
+    environment:
+      CORS_ORIGINS: https://${DOMAIN:?set DOMAIN}
+      COOKIE_SECURE: "true"
+  frontend:
+    ports: !reset []          # only Caddy is exposed
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment: { DOMAIN: "${DOMAIN:?set DOMAIN}" }
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [frontend]
+volumes: { caddy_data: {} }
