@@ -90,7 +90,7 @@ Without a Groq key the app still starts but chat is disabled; without a Pinecone
 
 ```bash
 cd backend
-pytest                          # ~375 tests, ~2.5 min; uses an isolated documind_ai_test database
+pytest                          # ~407 tests, ~4 min; uses an isolated documind_ai_test database
 pytest --runslow tests/test_rag_eval.py    # real embedding model retrieval eval
 ruff check .
 alembic check                   # models and migrations agree
@@ -100,6 +100,26 @@ npx vitest run && npm run lint && npm run build
 
 The default test run never calls Groq or the real embedder. A few tests hit live Pinecone/Tavily and skip themselves when no key is configured (a fresh clone without `.env` runs 367 passed / 11 skipped). Live end-to-end checks are in `backend/tools/`
 (`e2e_live.py`, `rag_e2e.py`, `web_e2e.py`, `ui_e2e.py`); they need real keys.
+
+## Evidence: evaluation, performance, reliability
+
+Measured on the real model (`openai/gpt-oss-120b` on Groq's free tier), 2026-11-17, one run each. LLM output is not
+deterministic, so a re-run can differ by a case or two. Full tables and every failure are in the linked reports. The sets are not additive: 30 edit/routing cases plus 28 Q&A questions are 58 distinct end-to-end cases, and the retrieval report reuses the same 19 answerable questions and 5 off-topic messages as the Q&A set. Only the 6 held-out questions were not used to tune retrieval; the edit cases and the 4 unanswerable questions were written by the author.
+
+| Area | Result | Report |
+|---|---|---|
+| Edit / chat / routing, 30 curated cases graded from the **produced file** | 30/30 pass; edit plans valid first try 23/23; design preserved 23/23; routing 30/30 | [EVAL_RESULTS](docs/EVAL_RESULTS.md) |
+| Document Q&A, 28 questions (19 answerable, 4 unanswerable, 5 off-topic) | answerable correct **and** validly cited 16/19; abstains on unanswerable 4/4; off-topic 5/5. Misses: deck date, phone number, one uncited answer | [EVAL_QA_RESULTS](docs/EVAL_QA_RESULTS.md) |
+| Retrieval recall@8 | tuning 13/13, held-out 6/6 | [RAG_EVAL](docs/RAG_EVAL.md) |
+| Latency (model + processing, no rate-limit waits) | p50 1.4 s, p95 3.2 s per edit request; end-to-end p95 56.03 s when requests run back to back and the 8,000 tokens/min quota paces them | EVAL_RESULTS |
+| Tokens and cost | about 1242 in / 108 out tokens and $0.00025 per request (list price) | EVAL_RESULTS |
+| Tests | 407 backend (95 % line coverage) + 70 frontend; ruff clean; fault-injection tests break the LLM, search and vector store on purpose | `backend/tests/` |
+
+Observability: every chat turn is traced (nodes, LLM attempts with tokens, tool calls, errors) and readable at
+`GET /sessions/{id}/runs/{run_id}`; `GET /metrics` exposes Prometheus counters. See
+[ARCHITECTURE](docs/ARCHITECTURE.md#observability-reliability-and-cost). Reproduce: `python -X utf8 -I tools/eval_edits.py` and
+`tools/eval_qa.py` (need API keys). CI is defined in `.github/workflows/ci.yml`; deployment steps in [DEPLOY](docs/DEPLOY.md)
+(no public instance is deployed from this repository).
 
 ## Security notes
 

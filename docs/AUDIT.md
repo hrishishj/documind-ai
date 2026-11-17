@@ -11,6 +11,7 @@ exists that fails if the fix is removed (mutation-checked where noted).
 | "openpyxl drops charts on save" | Charts survive; only the style preset, effects and the square-corner flag are lost. Shapes and sparklines **are** lost. Pivot tables survive. |
 | `llama-3.3-70b-versatile` as the Groq default | Retired on this account; `openai/gpt-oss-120b` is used (structured output verified). |
 | xlrd `font.bold` identifies bold text | Real files set font *weight*; the flag is often unset. Found by comparing with Excel itself. |
+| "Six tests failed because parallel pytest sessions clobbered the shared test DB" | Wrong: they failed because my span code read `self._kw`, which tests that build `GroqLLM` without `__init__` lack. Found by reading the failing test names, not by assuming. |
 | "Edits take ~21 s" | That was Groq's 8,000 tokens/minute limit, not model latency. After prompt compaction and a token governor: 2–4 s. |
 
 ## Defects found and fixed
@@ -72,6 +73,13 @@ exists that fails if the fix is removed (mutation-checked where noted).
 | 43 | Deployment | The Docker image created `/models` after the `chown`, which silently failed (`|| true`); the volume was root-owned, so the first document question would have died downloading the embedding model | Found by re-auditing and running real Q&A in the containers; the earlier smoke test only covered editing | Directories created before `chown`, no `|| true`; verified: model downloads, 617 passages indexed, cited answer, delete clears vectors |
 | 44 | Data leak | Deleting a conversation while its file was still being indexed left orphan vectors in Pinecone (delete removed the namespace, then the job wrote into it) | Stale data stays in the vector store forever | Delete removes DB rows first then vectors; the job re-checks its file exists and removes the namespace if not. Regression test fails when the fix is removed |
 | 45 | Docs | README said tests never call Pinecone/Tavily (6+1 live tests exist, skipped without keys) and called sample generation "deterministic" (zip timestamps differ); PLAN.md said retry <=2 | Overstated claims | Corrected to what was measured; fresh clone: 367 passed / 11 skipped without keys |
+| 46 | Observability | No per-turn trace: a failed or slow turn could not be explained, and token use and cost were unmeasured | Could not debug, tune or budget | Per-turn span traces (nodes, LLM attempts, tools), `/runs` API, `/metrics`, run id in logs; tests mutation-checked (breaking trace activation or token capture fails them) |
+| 47 | Data leak | After the model called a nonexistent tool, Groq's raw 400 JSON appeared in the chat reply | Internal provider detail shown to users | Found by the first eval run's traces; raw text now goes to the log only; regression test |
+| 48 | Performance | A rejected structured call kept its full `max_tokens` reservation in the rate window, so each retry waited ~50 s (seen as `rate_wait_s` in traces) | A request the model could not fulfil took ~60 s | Failed call is charged prompt + margin; regression test (mutation-checked). Re-run of the two impossible cases: one went 60 s -> 6 s, the other 59 s -> 55 s (its 50 s wait may be pacing from earlier requests; not separated). Weak evidence, n=2. Retries still fail for such requests; see limitations |
+| 49 | Routing | An ambiguous edit with two candidate files was edited, not clarified (eval run 1) | Silent wrong-file edit | Router rule added; run 2 clarifies. One sample each, not proof |
+| 50 | Reliability | Web search and vector search had no hard deadline (Tavily default 60 s, vector store none) | A hung dependency could pin a request slot | 30 s deadline helper, 15 s Tavily timeout; tests with a hung search and store |
+| 51 | Eval grader | My first Q&A grader scored 10/19 because it demanded one specific file (the same figure is in two files) and counted years echoed from the question as invented figures | Understated the system | Both fixed after reading the failures; stricter file-label number still reported (10/19); grader unit-tested. Rule changed after seeing results, disclosed here |
+| 52 | Dead code | `ValidationFailed`, `get_db`, `get_llm`, `detect_lossy_content`, 18 stale `.gitkeep`, empty root `tests/`, Vite template README | Clutter | Removed; ruff and full suite pass |
 
 ## Probes with a clean result
 
@@ -84,6 +92,11 @@ exists that fails if the fix is removed (mutation-checked where noted).
   (`backend/tools/office_crosscheck`).
 
 ## Known limitations (not yet addressed)
+
+* Requests the model cannot express as a plan ("edit paragraph 99") end after three failed structured-output attempts with an honest message, not the model's own explanation. Failed calls report no usage, so their tokens are not counted.
+* Q&A misses measured: a date on a deck cover, a bare phone-number line, and one qualitative answer given without a citation (it carries a visible caution).
+* Metrics are per process; traces have no UI; no hosted demo; CI file written but not yet executed on GitHub.
+* `langchain` is still listed in `requirements.in` although only `langchain-core`, `langchain-groq` and `langgraph` are imported; removal needs a clean-venv resolve check.
 
 * No user accounts: identity is an anonymous per-browser cookie. Fine for a proof of concept, not multi-user SaaS.
 * Single-process design: in-memory gate, limiter and analysis cache would need Redis for several workers.

@@ -41,6 +41,35 @@ React UI (Vite)  --/api-->  FastAPI  --->  LangGraph workflow  --->  Groq (gpt-o
 
 State is checkpointed in PostgreSQL by `thread_id = session_id`, so a conversation resumes across turns and restarts.
 
+## Observability, reliability and cost
+
+**Tracing** (`app/observability/trace.py`). Every chat turn is one *run* made of spans: each LangGraph node, each LLM
+request attempt (model, attempt number, rate-limit wait, input/output tokens) and each external call (web search, vector
+search). A span records start offset, duration, status and the error type/message. Spans nest through a `ContextVar`
+(a tool call is a child of its node). Traces hold **metadata only** - never the user's message, document text or model
+output - and are stored per turn in `run_traces` (owner-scoped like everything else):
+
+* `GET /sessions/{id}/runs` - latency, tokens, cost and outcome (`ok | error | gave_up`) per turn;
+* `GET /sessions/{id}/runs/{run_id}` - the full span tree (every retry and failure visible);
+* `GET /metrics` - Prometheus text: runs by intent/status, tokens, cost, LLM calls/retries/failures, latency histogram;
+* every server log line is stamped with the first 8 characters of its run id.
+
+A streamed response resumes in a fresh context on each step, so the route re-activates the trace around every
+`next()` of the graph stream (a test mutation-checks this).
+
+**Cost** = tokens reported by the provider x list price (`PRICE_INPUT_PER_MTOK` / `PRICE_OUTPUT_PER_MTOK`).
+
+**Reliability.** LLM: 60 s timeout per request, SDK retries disabled and replaced by our own loop (exponential backoff,
+`retry-after` honoured, 5 attempts) behind a sliding-window token governor; a reply that is not valid structured output
+is retried by the *workflow* with the validator's reasons (3 attempts), then the user gets an honest "could not" message.
+Web search: Tavily then ddgs, 15 s client timeout, 30 s hard deadline. Vector store: 30 s hard deadline, and any failure
+degrades to plain chat with a visible note. Deadlines use `app/core/timeouts.py` (daemon thread, caller stops waiting).
+`tests/test_fault_injection.py` breaks each dependency on purpose and asserts the user-visible result and the trace.
+
+**Evaluation.** `tools/eval_edits.py` (30 end-to-end cases, graded from the produced file) and `tools/eval_qa.py`
+(answer correctness and citation validity) run against the real model and write `docs/EVAL_RESULTS.md` and
+`docs/EVAL_QA_RESULTS.md`; retrieval recall is in `docs/RAG_EVAL.md`.
+
 ## RAG and citations
 
 * Documents are split into ~900-character passages that keep an exact locator (paragraph, table, slide, sheet rows, PDF page).
