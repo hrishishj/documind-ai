@@ -95,7 +95,7 @@ exists that fails if the fix is removed (mutation-checked where noted).
 
 * Requests the model cannot express as a plan ("edit paragraph 99") end after three failed structured-output attempts with an honest message, not the model's own explanation. Failed calls report no usage, so their tokens are not counted.
 * Q&A misses measured: a date on a deck cover, a bare phone-number line, and one qualitative answer given without a citation (it carries a visible caution).
-* Metrics are per process; traces have no UI; no hosted demo; CI file written but not yet executed on GitHub.
+* Metrics are per process; traces have no UI; no hosted demo; CI ran once on GitHub (run 44082333708, commit 40e848e, 5m24s: backend, frontend and docker jobs succeeded; per-job detail read from the run page, not the API). Its actions emit Node 20 deprecation warnings.
 * `langchain` is still listed in `requirements.in` although only `langchain-core`, `langchain-groq` and `langgraph` are imported; removal needs a clean-venv resolve check.
 
 * No user accounts: identity is an anonymous per-browser cookie. Fine for a proof of concept, not multi-user SaaS.
