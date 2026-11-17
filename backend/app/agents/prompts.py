@@ -11,6 +11,8 @@ Rules:
 - Only files of format docx, pptx or xlsx can be edited. Never choose a pdf/txt file as an edit target.
 - "Make it shorter", "change the title" etc. refer to the most recent artifact (kind "artifact", highest version) if one exists.
 - If exactly one editable file exists and the user wants a change, choose it.
+- If SEVERAL editable files exist and the message does not say which one (by name, type such as "the deck"/"the spreadsheet",
+  or content), do not guess: choose "clarify" and ask which file, listing the options.
 - Never invent a file id; use only ids from the list.
 
 Files available:
