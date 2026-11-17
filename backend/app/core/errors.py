@@ -22,11 +22,6 @@ class NotFoundError(AppError):
     code = "not_found"
 
 
-class ValidationFailed(AppError):
-    status_code = 422
-    code = "validation_failed"
-
-
 class UnsafeFileError(AppError):
     status_code = 400
     code = "unsafe_file"

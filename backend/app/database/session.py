@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from functools import lru_cache
 
 from sqlalchemy import Engine, create_engine
@@ -28,12 +27,3 @@ def get_database() -> Database:
 
 def get_engine() -> Engine:  # kept for existing callers/tests
     return get_database().engine
-
-
-def get_db() -> Iterator[Session]:
-    """FastAPI dependency yielding a session (closed after the request)."""
-    db = get_database().session()
-    try:
-        yield db
-    finally:
-        db.close()

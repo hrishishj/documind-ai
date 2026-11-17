@@ -55,11 +55,6 @@ def assess_content(path: str | Path) -> dict[str, list[str]]:
     return {"blocking": blocking, "degraded": degraded}
 
 
-def detect_lossy_content(path: str | Path) -> list[str]:
-    """Blocking items only (kept for callers that just need the refusal list)."""
-    return assess_content(path)["blocking"]
-
-
 def _last_data_row(ws) -> int:
     for r in range(ws.max_row, 0, -1):
         if any(c.value is not None for c in ws[r]):
